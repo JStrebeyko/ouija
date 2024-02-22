@@ -1,0 +1,2 @@
+# ouija
+arduino ghost project 👻
