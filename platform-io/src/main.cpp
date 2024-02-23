@@ -1,31 +1,133 @@
-/**
- * Blink
- *
- * Turns on an LED on for one second,
- * then off for one second, repeatedly.
- */
-#include "Arduino.h"
 
-// Set LED_BUILTIN if it is not defined by Arduino framework
-// #define LED_BUILTIN 13
+#include "Arduino.h"
+// Bounce.pde
+// -*- mode: C++ -*-
+//
+// Make a single stepper bounce from one limit to another
+//
+// Copyright (C) 2012 Mike McCauley
+// $Id: Random.pde,v 1.1 2011/01/05 01:51:01 mikem Exp mikem $
+
+#include <AccelStepper.h>
+
+
+
+
+#define dirPin 8
+#define stepPin 9
+// #define dir2Pin 10
+// #define step2Pin 11
+#define motorInterfaceType 1
+// Define a stepper and the pins it will use
+AccelStepper stepper = AccelStepper(motorInterfaceType, stepPin, dirPin); 
+// AccelStepper stepper2 = AccelStepper(motorInterfaceType, step2Pin, dir2Pin); 
+int steps = 5000;
+int direction = 1;
+int width = 0;
+bool calibrated = false;
 
 void setup()
-{
-  // initialize LED digital pin as an output.
-  pinMode(LED_BUILTIN, OUTPUT);
+{  
+  Serial.begin(9600);
+  // Change these to suit your stepper if you want
+  stepper.setMaxSpeed(8000);
+  stepper.setSpeed(5000);
+  stepper.setAcceleration(100000);
+  //stepper.moveTo(5000);
+
+  // stepper2.setMaxSpeed(8000);
+  // stepper2.setAcceleration(1000);
+  // stepper2.moveTo(5000);
+stepper.moveTo(steps);
+
+
+   pinMode(2, INPUT_PULLUP); //kontaktron 1
+ pinMode(3, INPUT_PULLUP); //kontatkron 2
+
+ 
 }
 
 void loop()
 {
-  // turn the LED on (HIGH is the voltage level)
-  digitalWrite(LED_BUILTIN, HIGH);
 
-  // wait for a second
-  delay(100);
+  int kontakt1 = digitalRead(2);
+  int kontakt2 = digitalRead(3);
+ 
 
-  // turn the LED off by making the voltage LOW
-  digitalWrite(LED_BUILTIN, LOW);
+  // Serial.print("kontakt1: ");
+  // Serial.print(kontakt1);
+  // Serial.print(" kontakt2: ");
+  // Serial.println(kontakt2);
+  //  Serial.print(" dir: ");
+  // Serial.println(direction);
 
-   // wait for a second
-  delay(100);
+    //kontaktorn 1 nie wykrywa nic, jedziemy
+    if (kontakt1 == 1 && direction == 1 && calibrated == false){
+      stepper.move(steps);
+      
+    } 
+
+//  if (stepper.distanceToGo() == 0)
+//       stepper.moveTo(-stepper.currentPosition());
+
+//     stepper.run();
+
+    // kontaktron 1 zlapal - zeruj pozycje i zawroc
+    if (kontakt1 == 0 && direction == 1 && calibrated == false){
+      stepper.setCurrentPosition(0);
+      direction = 0;
+    }
+
+    //jedziemy w druga strone
+    if (kontakt2 == 1 && direction == 0 && calibrated == false){
+      stepper.move(-steps);
+      
+
+      // Serial.print("stepCount: ");
+      // Serial.println(stepCount);
+    }
+
+    //dojechalismy na drugi koniec
+    if (kontakt2 == 0 && direction == 0 && calibrated == false){
+      //Serial.print("calibrated, steps counted: ");
+      //Serial.println(stepCount);
+      
+      stepper.stop();
+      width = stepper.currentPosition();
+      delay(1000);
+      //pojedzmy teraz na srodek
+      //stepper.setAcceleration(1000);
+      Serial.println(width);
+      stepper.moveTo(0);
+      
+   
+  
+
+
+      calibrated = true;
+    }
+//popisowa
+    // if (calibrated == true){
+    //   int wdt = width;
+    //    if (stepper.distanceToGo() == 0){
+    //   stepper.moveTo(-wdt);
+    //   wdt = -wdt;
+    //   }
+    // }
+
+
+    stepper.run();
+
+
+    
+
+    
 }
+
+
+
+
+
+
+
+
