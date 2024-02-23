@@ -1,100 +1,94 @@
-/*
- * --------------------------------------------------------------------------------------------------------------------
- * Example showing how to read data from more than one PICC to serial.
- * --------------------------------------------------------------------------------------------------------------------
- * This is a MFRC522 library example; for further details and other examples see: https://github.com/OSSLibraries/Arduino_MFRC522v2
- *
- * Example sketch/program showing how to read data from more than one PICC (that is: a RFID Tag or Card) using a
- * MFRC522 based RFID Reader on the Arduino SPI interface.
- *
- * Warning: This may not work! Multiple devices at one SPI are difficult and cause many trouble!! Engineering skill
- *          and knowledge are required!
- *
- * @license Released into the public domain.
- *
- * Typical pin layout used:
- * -----------------------------------------------------------------------------------------
- *             MFRC522      Arduino       Arduino   Arduino    Arduino          Arduino
- *             Reader/PCD   Uno/101       Mega      Nano v3    Leonardo/Micro   Pro Micro
- * Signal      Pin          Pin           Pin       Pin        Pin              Pin
- * -----------------------------------------------------------------------------------------
- * SPI SS 1    SDA(SS)      ** custom, take a unused pin, only HIGH/LOW required **
- * SPI SS 2    SDA(SS)      ** custom, take a unused pin, only HIGH/LOW required **
- * SPI MOSI    MOSI         11 / ICSP-4   51        D11        ICSP-4           16
- * SPI MISO    MISO         12 / ICSP-1   50        D12        ICSP-1           14
- * SPI SCK     SCK          13 / ICSP-3   52        D13        ICSP-3           15
- *
- * Not found? For more see: https://github.com/OSSLibraries/Arduino_MFRC522v2#pin-layout
+/*------------------------
+
+ * Pin layout should be as follows:
+ * Signal     Pin              Pin               Pin
+ *            Arduino Uno      Arduino Mega      MFRC522 board
+ * ------------------------------------------------------------
+ * Reset      9                5                 RST
+ * SPI SS     10               53                SDA
+ * SPI MOSI   11               51                MOSI
+ * SPI MISO   12               50                MISO
+ * SPI SCK    13               52                SCK
+ * voltage 3.3v
+
  */
 
-// Note for i2c:
-// With i2c possible if every device has a own unique address.
-// Otherwise a i2c multiplexer is required, which requires a own implementation of MFRC522Driver.h.
+#include <SPI.h>
+#include <MFRC522.h>
 
-#include <MFRC522v2.h>
-#include <MFRC522DriverSPI.h>
-#include <MFRC522DriverPinSimple.h>
-#include <MFRC522Debug.h>
+#define SS_PIN 10
+#define RST_PIN 9
 
-MFRC522DriverPinSimple ss_1_pin(10);  // Configurable, take an unused pin, only HIGH/LOW required, must be different to SS 2.
-//MFRC522DriverPinSimple ss_2_pin(8); // Configurable, take an unused pin, only HIGH/LOW required, must be different to SS 1.
+int elock = 4;
 
-MFRC522DriverSPI driver_1{ ss_1_pin };
-//MFRC522DriverSPI driver_2{ss_2_pin};
+MFRC522 mfrc522(SS_PIN, RST_PIN); // Create MFRC522 instance.
 
-MFRC522 readers[]{ driver_1 };  // Create MFRC522 instance.
-
-/**
- * Initialize.
- */
-void setup() {
-  Serial.begin(115200);  // Initialize serial communications with the PC for debugging.
-  while (!Serial)
-    ;  // Do nothing if no serial port is opened (added for Arduinos based on ATMEGA32U4).
-
-  for (MFRC522 reader : readers) {
-    reader.PCD_Init();  // Init each MFRC522 card.
-    Serial.print(F("Reader "));
-    static uint8_t i = 0;
-    i++;
-    Serial.print(i);
-    Serial.print(F(": "));
-    MFRC522Debug::PCD_DumpVersionToSerial(reader, Serial);
-  }
+void setup()
+{
+  Serial.begin(9600); // Initialize serial communications with the PC
+  pinMode(elock, OUTPUT);
+  digitalWrite(elock, LOW);
+  SPI.begin();        // Init SPI bus
+  mfrc522.PCD_Init(); // Init MFRC522 card
+  Serial.println("Scan a MIFARE Classic PICC to demonstrate Value Blocks.");
 }
 
-/**
- * Main loop.
- */
-void loop() {
-  // Look for new cards.
-  char wawa = "19 DC 52 CF";
-  constexpr uint8_t bingo[] = { 0x19, 0xDC, 0x52, 0xCF };
+void loop()
+{
 
-
-  for (MFRC522 reader : readers) {
-
-    if (reader.PICC_IsNewCardPresent()) {
-      reader.PICC_ReadCardSerial();
-
-      MFRC522Debug::PrintUID(Serial, reader.uid);
-      //Serial.println(reader.uid == bingo);
-      //Serial.println(bingo = reader.uid, HEX );
-
-      //Serial.println(bingo);
-        char money;
-        for (byte i = 0; i < reader.uid.size; i++) {
-        money = money + reader.uid.uidByte[i] < 0x10 ? " 0" : " ";
-        money = money + reader.uid.uidByte[i];
+  // Prepare key - all keys are set to FFFFFFFFFFFFh at chip delivery from the factory.
+  MFRC522::MIFARE_Key key;
+  for (byte i = 0; i < 6; i++)
+  {
+    key.keyByte[i] = 0xFF;
   }
-      Serial.println(reader.uid == bingo);
-      // Serial.println(reader.uid);
-
-
-      // Halt PICC.
-      reader.PICC_HaltA();
-      // Stop encryption on PCD.
-      reader.PCD_StopCrypto1();
-    }
+  // Look for new cards
+  if (!mfrc522.PICC_IsNewCardPresent())
+  {
+    return;
   }
+
+  // Select one of the cards
+  if (!mfrc522.PICC_ReadCardSerial())
+  {
+    return;
+  }
+  // Now a card is selected. The UID and SAK is in mfrc522.uid.
+
+  // Dump UID
+  Serial.print("Card UID:");
+  for (byte i = 0; i < mfrc522.uid.size; i++)
+  {
+    Serial.print(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " ");
+    Serial.print(mfrc522.uid.uidByte[i], DEC);
+  }
+  Serial.println();
+
+  // Dump PICC type
+  byte piccType = mfrc522.PICC_GetType(mfrc522.uid.sak);
+  //    Serial.print("PICC type: ");
+  // Serial.println(mfrc522.PICC_GetTypeName(piccType));
+  if (piccType != MFRC522::PICC_TYPE_MIFARE_MINI && piccType != MFRC522::PICC_TYPE_MIFARE_1K && piccType != MFRC522::PICC_TYPE_MIFARE_4K)
+  {
+    // Serial.println("This sample only works with MIFARE Classic cards.");
+    return;
+  }
+  // defining Cards here
+
+  if ((mfrc522.uid.uidByte[0] == 243) && (mfrc522.uid.uidByte[1] == 36) && (mfrc522.uid.uidByte[2] == 177) && (mfrc522.uid.uidByte[3] == 207))
+  {
+    Serial.println("Tag A detected");
+  }
+  else if ((mfrc522.uid.uidByte[0] == 218) && (mfrc522.uid.uidByte[1] == 136) && (mfrc522.uid.uidByte[2] == 125) && (mfrc522.uid.uidByte[3] == 122))
+  {
+    Serial.println("Tag B detected");
+  }
+  else if ((mfrc522.uid.uidByte[0] == 218) && (mfrc522.uid.uidByte[1] == 94) && (mfrc522.uid.uidByte[2] == 219) && (mfrc522.uid.uidByte[3] == 122))
+  {
+    Serial.println("Tag C detected");
+  }
+  else
+    Serial.println("unregistered user");
+
+  delay(1000);
 }
