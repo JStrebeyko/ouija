@@ -23,6 +23,28 @@ int elock = 4;
 
 MFRC522 mfrc522(SS_PIN, RST_PIN); // Create MFRC522 instance.
 
+
+// byte 'α'
+
+
+// void CharToByte(char* chars, byte* bytes, unsigned int count){
+//     for(unsigned int i = 0; i < count; i++)
+//         bytes[i] = (byte)chars[i];
+// }
+
+// void ByteToChar(byte* bytes, char* chars, unsigned int count){
+//     for(unsigned int i = 0; i < count; i++)
+//          chars[i] = (char)bytes[i];
+}
+// string readable(string s1, string s2, string s3)
+// {
+//     int index = s1.find(s2, 0);
+
+//     s1.replace(index, s2.length(), s3);
+
+//     return s1;
+// }
+
 void setup()
 {
   Serial.begin(9600); // Initialize serial communications with the PC
@@ -32,6 +54,19 @@ void setup()
   mfrc522.PCD_Init(); // Init MFRC522 card
   Serial.println("Scan a MIFARE Classic PICC to demonstrate Value Blocks.");
 }
+
+
+// char get_string_representation_from_uid_byte(byte[] some_bytes)  {
+//   char stringrepr
+  
+//     for (byte i = 0; i < some_bytes.size; i++)
+//       {
+//         stringrepr = stringrepr + some_bytes[i] < 0x10 ? " 0" : " " + 
+//         // Serial.print(some_bytes[i] < 0x10 ? " 0" : " ");
+//       }
+//         // Serial.print(some_bytes[i], DEC);
+//       Serial.println(stringrepr);
+// }
 
 void loop()
 {
@@ -75,15 +110,36 @@ void loop()
   }
   // defining Cards here
 
+  // switch (expression)
+  // {
+  // case /* constant-expression */:
+  //   /* code */
+  //   break;
+  
+  // default:
+  //   break;
+  // }
+
   if ((mfrc522.uid.uidByte[0] == 243) && (mfrc522.uid.uidByte[1] == 36) && (mfrc522.uid.uidByte[2] == 177) && (mfrc522.uid.uidByte[3] == 207))
   {
     Serial.println("Tag A detected");
+    
+    // n=memcmp ( mfrc522.uid.uidByte, buffer2, sizeof(buffer1) );
+    // ByteToChar(mfrc522.uid.uidByte)
+  }
+    if ((mfrc522.uid.uidByte[0] == 243) && (mfrc522.uid.uidByte[1] == 36) && (mfrc522.uid.uidByte[2] == 177) && (mfrc522.uid.uidByte[3] == 207))
+  {
+    Serial.println("Tag A detected ******");
   }
   else if ((mfrc522.uid.uidByte[0] == 218) && (mfrc522.uid.uidByte[1] == 136) && (mfrc522.uid.uidByte[2] == 125) && (mfrc522.uid.uidByte[3] == 122))
   {
     Serial.println("Tag B detected");
   }
   else if ((mfrc522.uid.uidByte[0] == 218) && (mfrc522.uid.uidByte[1] == 94) && (mfrc522.uid.uidByte[2] == 219) && (mfrc522.uid.uidByte[3] == 122))
+  {
+    Serial.println("Tag C detected");
+  }
+    else if ((mfrc522.uid.uidByte[0] == 218) && (mfrc522.uid.uidByte[1] == 94) && (mfrc522.uid.uidByte[2] == 219) && (mfrc522.uid.uidByte[3] == 122))
   {
     Serial.println("Tag C detected");
   }
