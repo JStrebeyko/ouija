@@ -1,150 +1,125 @@
-/*------------------------
 
- * Pin layout should be as follows:
- * Signal     Pin              Pin               Pin
- *            Arduino Uno      Arduino Mega      MFRC522 board
- * ------------------------------------------------------------
- * Reset      9                5                 RST
- * SPI SS     10               53                SDA
- * SPI MOSI   11               51                MOSI
- * SPI MISO   12               50                MISO
- * SPI SCK    13               52                SCK
- * voltage 3.3v
-
- */
-
-#include <SPI.h>
-#include <MFRC522.h>
-
-#define SS_PIN 10
-#define RST_PIN 9
-
-int elock = 4;
-
-MFRC522 mfrc522(SS_PIN, RST_PIN); // Create MFRC522 instance.
+#include "Arduino.h"
 
 
-// byte 'α'
+#include <AccelStepper.h>
 
-
-// void CharToByte(char* chars, byte* bytes, unsigned int count){
-//     for(unsigned int i = 0; i < count; i++)
-//         bytes[i] = (byte)chars[i];
-// }
-
-// void ByteToChar(byte* bytes, char* chars, unsigned int count){
-//     for(unsigned int i = 0; i < count; i++)
-//          chars[i] = (char)bytes[i];
-}
-// string readable(string s1, string s2, string s3)
-// {
-//     int index = s1.find(s2, 0);
-
-//     s1.replace(index, s2.length(), s3);
-
-//     return s1;
-// }
+#define dirPin 8
+#define stepPin 9
+#define dir2Pin 10
+#define step2Pin 11
+#define motorInterfaceType 1
+// Define a stepper and the pins it will use
+AccelStepper stepper = AccelStepper(motorInterfaceType, stepPin, dirPin);
+AccelStepper stepper2 = AccelStepper(motorInterfaceType, step2Pin, dir2Pin);
+int steps = 5000;
+int direction = 1;
+long width = 0;
+bool calibrated = false;
 
 void setup()
 {
-  Serial.begin(9600); // Initialize serial communications with the PC
-  pinMode(elock, OUTPUT);
-  digitalWrite(elock, LOW);
-  SPI.begin();        // Init SPI bus
-  mfrc522.PCD_Init(); // Init MFRC522 card
-  Serial.println("Scan a MIFARE Classic PICC to demonstrate Value Blocks.");
+  Serial.begin(9600);
+  // Change these to suit your stepper if you want
+  stepper.setMaxSpeed(10000);
+  stepper.setSpeed(8000);
+  stepper.setAcceleration(100000);
+  // stepper.moveTo(5000);
+
+  stepper2.setMaxSpeed(10000);
+  stepper2.setSpeed(8000);
+  stepper2.setAcceleration(100000);
+
+  stepper.moveTo(steps);
+  stepper2.moveTo(steps);
+
+  pinMode(2, INPUT_PULLUP); // kontaktron 1
+  pinMode(3, INPUT_PULLUP); // kontatkron 2
 }
-
-
-// char get_string_representation_from_uid_byte(byte[] some_bytes)  {
-//   char stringrepr
-  
-//     for (byte i = 0; i < some_bytes.size; i++)
-//       {
-//         stringrepr = stringrepr + some_bytes[i] < 0x10 ? " 0" : " " + 
-//         // Serial.print(some_bytes[i] < 0x10 ? " 0" : " ");
-//       }
-//         // Serial.print(some_bytes[i], DEC);
-//       Serial.println(stringrepr);
-// }
 
 void loop()
 {
 
-  // Prepare key - all keys are set to FFFFFFFFFFFFh at chip delivery from the factory.
-  MFRC522::MIFARE_Key key;
-  for (byte i = 0; i < 6; i++)
+  int kontakt1 = digitalRead(2);
+  int kontakt2 = digitalRead(3);
+
+  Serial.print("kontakt1: ");
+  Serial.print(kontakt1);
+  Serial.print(" kontakt2: ");
+  Serial.println(kontakt2);
+  Serial.print(" dir: ");
+  Serial.println(direction);
+
+  // kontaktorn 1 nie wykrywa nic, jedziemy
+  if (kontakt1 == 1 && direction == 1 && calibrated == false)
   {
-    key.keyByte[i] = 0xFF;
-  }
-  // Look for new cards
-  if (!mfrc522.PICC_IsNewCardPresent())
-  {
-    return;
+    stepper.move(steps);
+    stepper2.move(steps);
   }
 
-  // Select one of the cards
-  if (!mfrc522.PICC_ReadCardSerial())
-  {
-    return;
-  }
-  // Now a card is selected. The UID and SAK is in mfrc522.uid.
-
-  // Dump UID
-  Serial.print("Card UID:");
-  for (byte i = 0; i < mfrc522.uid.size; i++)
-  {
-    Serial.print(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " ");
-    Serial.print(mfrc522.uid.uidByte[i], DEC);
-  }
-  Serial.println();
-
-  // Dump PICC type
-  byte piccType = mfrc522.PICC_GetType(mfrc522.uid.sak);
-  //    Serial.print("PICC type: ");
-  // Serial.println(mfrc522.PICC_GetTypeName(piccType));
-  if (piccType != MFRC522::PICC_TYPE_MIFARE_MINI && piccType != MFRC522::PICC_TYPE_MIFARE_1K && piccType != MFRC522::PICC_TYPE_MIFARE_4K)
-  {
-    // Serial.println("This sample only works with MIFARE Classic cards.");
-    return;
-  }
-  // defining Cards here
-
-  // switch (expression)
-  // {
-  // case /* constant-expression */:
-  //   /* code */
-  //   break;
   
-  // default:
-  //   break;
-  // }
 
-  if ((mfrc522.uid.uidByte[0] == 243) && (mfrc522.uid.uidByte[1] == 36) && (mfrc522.uid.uidByte[2] == 177) && (mfrc522.uid.uidByte[3] == 207))
-  {
-    Serial.println("Tag A detected");
-    
-    // n=memcmp ( mfrc522.uid.uidByte, buffer2, sizeof(buffer1) );
-    // ByteToChar(mfrc522.uid.uidByte)
-  }
-    if ((mfrc522.uid.uidByte[0] == 243) && (mfrc522.uid.uidByte[1] == 36) && (mfrc522.uid.uidByte[2] == 177) && (mfrc522.uid.uidByte[3] == 207))
-  {
-    Serial.println("Tag A detected ******");
-  }
-  else if ((mfrc522.uid.uidByte[0] == 218) && (mfrc522.uid.uidByte[1] == 136) && (mfrc522.uid.uidByte[2] == 125) && (mfrc522.uid.uidByte[3] == 122))
-  {
-    Serial.println("Tag B detected");
-  }
-  else if ((mfrc522.uid.uidByte[0] == 218) && (mfrc522.uid.uidByte[1] == 94) && (mfrc522.uid.uidByte[2] == 219) && (mfrc522.uid.uidByte[3] == 122))
-  {
-    Serial.println("Tag C detected");
-  }
-    else if ((mfrc522.uid.uidByte[0] == 218) && (mfrc522.uid.uidByte[1] == 94) && (mfrc522.uid.uidByte[2] == 219) && (mfrc522.uid.uidByte[3] == 122))
-  {
-    Serial.println("Tag C detected");
-  }
-  else
-    Serial.println("unregistered user");
+  //  if (stepper.distanceToGo() == 0)
+  //       stepper.moveTo(-stepper.currentPosition());
 
-  delay(1000);
+  //     stepper.run();
+
+  // kontaktron 1 zlapal - zeruj pozycje i zawroc
+  if (kontakt1 == 0 && direction == 1 && calibrated == false)
+  {
+    stepper.setCurrentPosition(0);
+    stepper2.setCurrentPosition(0);
+    direction = 0;
+    Serial.print("zeroing: ");
+    Serial.println(stepper.currentPosition());
+  }
+
+  // jedziemy w druga strone
+  if (kontakt2 == 1 && direction == 0 && calibrated == false)
+  {
+    stepper.move(-steps);
+    stepper2.move(-steps);
+
+    // Serial.print("stepCount: ");
+    // Serial.println(stepCount);
+  }
+
+  // dojechalismy na drugi koniec
+  if (kontakt2 == 0 && direction == 0 && calibrated == false)
+  {
+    // Serial.print("calibrated, steps counted: ");
+    // Serial.println(stepCount);
+
+    stepper.stop();
+    stepper2.stop();
+    Serial.print("step position = ");
+    Serial.println(stepper.currentPosition());
+    width = stepper.currentPosition();
+    delay(1000);
+    // pojedzmy teraz na srodek
+    // stepper.setAcceleration(1000);
+    Serial.print("calibrated: width = ");
+    Serial.println(width);
+    stepper.moveTo(width / 2);
+    stepper2.moveTo(width / 2);
+
+    calibrated = true;
+  }
+  // popisowa
+  if (calibrated == true)
+  {
+    // stepper.setSpeed(8000);
+    // stepper2.setSpeed(8000);
+    stepper.runSpeedToPosition();
+    stepper2.runSpeedToPosition();
+    // Serial.println(stepper.currentPosition());
+  }
+
+  if (calibrated == false)
+  {
+    // stepper.setSpeed(8000);
+    // stepper2.setSpeed(8000);
+    stepper.runSpeed();
+    stepper2.runSpeed();
+  }
 }
