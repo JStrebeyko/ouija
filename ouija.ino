@@ -5,8 +5,17 @@
 #include <AccelStepper.h>
 
 
-String txt1 = "123 maszeruja oficery";
+String txt1 = "chuj";
+String txt2 = "2 2 2 2";
+String txt3 = "3 3 3 3";
+String txt4 = "4 4 4 4";
+String txt5 = "5 5 5 5";
+String txt6 = "6 6 6 6";
+String txt7 = "7 7 7 7";
+String txt8 = "8 8 8 8";
+String txt9 = "9 9 9 9";
 
+String txt0 = " ";
 
 #define dirPin 8     //pins for xl motor
 #define stepPin 9    //pins for xl motor
@@ -36,6 +45,9 @@ bool calibratedY = false;
 
 float t = 0;
 long r = 0; //radius
+
+long xPos = 0 ;   
+long yPos = 0;  
 
 
 //decalre functions
@@ -339,6 +351,34 @@ void charPos (char letter ='a'){
   // }
 }
 
+void playString(String sentence = txt0){
+      if (xl.distanceToGo() == 0 && y.distanceToGo() == 0) {  //go to next letter
+       
+
+        for (int i = 0; i <= sentence.length();) {
+          //Serial.println(i);
+          if (xl.distanceToGo() == 0 && y.distanceToGo() == 0) {
+    
+             delay(2000);
+               if(i == sentence.length()){
+              return;
+            }
+            charPos(sentence.charAt(i)); //set t value
+            xPos = r * cos(t) + (width / 2);   //calculate position of letters in a circle x = r*cos(t) + h, y = r*sin(t) + w , where h and w are the coordinates of the circle center
+            yPos = r * sin(t) + (height / 2); // r = height/2 for big circle (letters), r = height/3 for small circle (numbers)
+            
+            moveToX(xPos);
+            y.moveTo(yPos);
+
+            i++;
+            
+          }
+            runSpeedToPositionX();
+            y.runSpeedToPosition();
+        }
+      }
+      }
+
 void setup() {
   Serial.begin(9600);
   Serial.println(txt1.length());
@@ -368,39 +408,19 @@ void loop() {
     if (resY == true) {  // if calibrated
       //Serial.println("xy done");
 
-      long xPos = width/2 ;   
-      long yPos = height/2;  // go to the middle
+       xPos = width/2 ;   
+       yPos = height/2;  // go to the middle
 
       moveToX(xPos);
       y.moveTo(yPos);
-
-
-      if (xl.distanceToGo() == 0 && y.distanceToGo() == 0) {  //go to next letter
-       
-
-        for (int i = 0; i <= txt1.length();) {
-          //Serial.println(i);
-          if (xl.distanceToGo() == 0 && y.distanceToGo() == 0) {
-             delay(2000);
-            charPos(txt1.charAt(i)); //set t value
-            xPos = r * cos(t) + (width / 2);   //calculate position of letters in a circle x = r*cos(t) + h, y = r*sin(t) + w , where h and w are the coordinates of the circle center
-            yPos = r * sin(t) + (height / 2); // r = height/2 for big circle (letters), r = height/3 for small circle (numbers)
-            
-            moveToX(xPos);
-            y.moveTo(yPos);
-
-            i++;
-          }
-            runSpeedToPositionX();
-            y.runSpeedToPosition();
-        }
-        //Serial.println(t);
-
-        // t = t - (6.28319 / 26);                              //6.28319 == full turn
-      
-      }
       runSpeedToPositionX();
       y.runSpeedToPosition();
+
+      if (xl.distanceToGo() == 0 && y.distanceToGo() == 0) {
+      playString(txt1);
+      playString(txt2);
+      }
+      
     }
   }
 }
