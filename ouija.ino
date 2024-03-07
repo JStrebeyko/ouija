@@ -4,6 +4,10 @@
 
 #include <AccelStepper.h>
 
+
+String txt1 = "123 maszeruja oficery";
+
+
 #define dirPin 8     //pins for xl motor
 #define stepPin 9    //pins for xl motor
 #define dir2Pin 10   //pins for xr motor
@@ -31,6 +35,7 @@ bool calibratedX = false;
 bool calibratedY = false;
 
 float t = 0;
+long r = 0; //radius
 
 
 //decalre functions
@@ -203,9 +208,140 @@ boolean calibrateY() {
   }
 }
 
+void charPos (char letter ='a'){
+   // proba literkowa
+  // String txt1 = "siema eniu tu dupa";
+  // for (int i = 0; i <= txt1.length(); i++) {
+    //Serial.println(txt1.charAt(i));
+    if (letter != ' ' || letter != '.'){
+    r = height/2;
+      if (letter =='1' || letter =='2' || letter =='3' || letter =='4' || letter =='5' || letter =='6' || letter =='7' || letter =='8' || letter =='9' || letter =='0'){
+      r = height /3.5;
+      }
+    }
+    if (letter == ' ' || letter == '.') {
+      //t = -((6.28319 / 26) * 25);
+      r = 0;
+    }
+    
+
+    if (letter == 'A' || letter == 'a') {
+      t = -((6.28319 / 26) * 0);
+    }
+     if (letter == 'B' || letter == 'b') {
+      t = -((6.28319 / 26) * 1);
+    }
+    if (letter == 'C' || letter == 'c') {
+      t = -((6.28319 / 26) * 2);
+    }
+     if (letter == 'D' || letter == 'd') {
+      t = -((6.28319 / 26) * 3);
+    }
+       if (letter == 'E' || letter == 'e') {
+      t = -((6.28319 / 26) * 4);
+    }
+     if (letter == 'F' || letter == 'f') {
+      t = -((6.28319 / 26) * 5);
+    }
+    if (letter == 'G' || letter == 'g') {
+      t = -((6.28319 / 26) * 6);
+    }
+     if (letter == 'H' || letter == 'h') {
+      t = -((6.28319 / 26) * 7);
+    }
+     if (letter == 'I' || letter == 'i') {
+      t = -((6.28319 / 26) * 8);
+    }
+     if (letter == 'J' || letter == 'j') {
+      t = -((6.28319 / 26) * 9);
+    }
+    if (letter == 'K' || letter == 'k') {
+      t = -((6.28319 / 26) * 10);
+    }
+     if (letter == 'L' || letter == 'l') {
+      t = -((6.28319 / 26) * 11);
+    }
+       if (letter == 'M' || letter == 'm') {
+      t = -((6.28319 / 26) * 12);
+    }
+     if (letter == 'N' || letter == 'n') {
+      t = -((6.28319 / 26) * 13);
+    }
+    if (letter == 'O' || letter == 'o') {
+      t = -((6.28319 / 26) * 14);
+    }
+     if (letter == 'P' || letter == 'p') {
+      t = -((6.28319 / 26) * 15);
+    }
+     if (letter == 'Q' || letter == 'q') {
+      t = -((6.28319 / 26) * 16);
+    }
+     if (letter == 'R' || letter == 'r') {
+      t = -((6.28319 / 26) * 17);
+    }
+    if (letter == 'S' || letter == 's') {
+      t = -((6.28319 / 26) * 18);
+    }
+     if (letter == 'T' || letter == 't') {
+      t = -((6.28319 / 26) * 19);
+    }
+       if (letter == 'U' || letter == 'u') {
+      t = -((6.28319 / 26) * 20);
+    }
+     if (letter == 'V' || letter == 'v') {
+      t = -((6.28319 / 26) * 21);
+    }
+    if (letter == 'W' || letter == 'w') {
+      t = -((6.28319 / 26) * 22);
+    }
+     if (letter == 'X' || letter == 'x') {
+      t = -((6.28319 / 26) * 23);
+    }
+    if (letter == 'Y' || letter == 'y') {
+      t = -((6.28319 / 26) * 24);
+    }
+     if (letter == 'Z' || letter == 'z') {
+      t = -((6.28319 / 26) * 25);
+      
+    }
+    
+     if (letter == '0') {
+      t = -((6.28319 / 10) * 0);
+    }
+      if (letter == '1') {
+      t = -((6.28319 / 10) * 1);
+    }
+      if (letter == '2') {
+      t = -((6.28319 / 10) * 2);
+    }
+      if (letter == '3') {
+      t = -((6.28319 / 10) * 3);
+    }
+      if (letter == '4') {
+      t = -((6.28319 / 10) * 4);
+    }
+      if (letter == '5') {
+      t = -((6.28319 / 10) * 5);
+    }
+     if (letter == '6') {
+      t = -((6.28319 / 10) * 6);
+    }
+     if (letter == '7') {
+      t = -((6.28319 / 10) * 7);
+    }
+     if (letter == '8') {
+      t = -((6.28319 / 10) * 8);
+    }
+     if (letter == '9') {
+      t = -((6.28319 / 10) * 9);
+    }
+
+  // }
+}
+
 void setup() {
   Serial.begin(9600);
-  Serial.println("siema wariaty duups");
+  Serial.println(txt1.length());
   // Change these to suit your stepper if you want
   steppersSetup(15000.0, 10000.0, 100000.0);  // steppersSetup(maxspeed, speed, accel)
 
@@ -223,93 +359,6 @@ void setup() {
 void loop() {
 
 
-  // // proba literkowa
-  // String txt1 = "siema eniu tu dupa";
-  // for (int i = 0; i <= txt1.length();) {
-  //   //Serial.println(txt1.charAt(i));
-
-  //   if (txt1.charAt(i) == 'A' || txt1.charAt(i) == 'a') {
-  //     t = ((6.28319 / 26) * 0);
-  //   }
-  //    if (txt1.charAt(i) == 'B' || txt1.charAt(i) == 'b') {
-  //     t = ((6.28319 / 26) * 1);
-  //   }
-  //   if (txt1.charAt(i) == 'C' || txt1.charAt(i) == 'c') {
-  //     t = ((6.28319 / 26) * 2);
-  //   }
-  //    if (txt1.charAt(i) == 'D' || txt1.charAt(i) == 'd') {
-  //     t = ((6.28319 / 26) * 3);
-  //   }
-  //      if (txt1.charAt(i) == 'E' || txt1.charAt(i) == 'e') {
-  //     t = ((6.28319 / 26) * 4);
-  //   }
-  //    if (txt1.charAt(i) == 'F' || txt1.charAt(i) == 'f') {
-  //     t = ((6.28319 / 26) * 5);
-  //   }
-  //   if (txt1.charAt(i) == 'G' || txt1.charAt(i) == 'g') {
-  //     t = ((6.28319 / 26) * 6);
-  //   }
-  //    if (txt1.charAt(i) == 'H' || txt1.charAt(i) == 'h') {
-  //     t = ((6.28319 / 26) * 7);
-  //   }
-  //    if (txt1.charAt(i) == 'I' || txt1.charAt(i) == 'i') {
-  //     t = ((6.28319 / 26) * 8);
-  //   }
-  //    if (txt1.charAt(i) == 'J' || txt1.charAt(i) == 'j') {
-  //     t = ((6.28319 / 26) * 9);
-  //   }
-  //   if (txt1.charAt(i) == 'K' || txt1.charAt(i) == 'k') {
-  //     t = ((6.28319 / 26) * 10);
-  //   }
-  //    if (txt1.charAt(i) == 'L' || txt1.charAt(i) == 'l') {
-  //     t = ((6.28319 / 26) * 11);
-  //   }
-  //      if (txt1.charAt(i) == 'M' || txt1.charAt(i) == 'm') {
-  //     t = ((6.28319 / 26) * 12);
-  //   }
-  //    if (txt1.charAt(i) == 'N' || txt1.charAt(i) == 'n') {
-  //     t = ((6.28319 / 26) * 13);
-  //   }
-  //   if (txt1.charAt(i) == 'O' || txt1.charAt(i) == 'o') {
-  //     t = ((6.28319 / 26) * 14);
-  //   }
-  //    if (txt1.charAt(i) == 'P' || txt1.charAt(i) == 'p') {
-  //     t = ((6.28319 / 26) * 15);
-  //   }
-  //    if (txt1.charAt(i) == 'Q' || txt1.charAt(i) == 'q') {
-  //     t = ((6.28319 / 26) * 16);
-  //   }
-  //    if (txt1.charAt(i) == 'R' || txt1.charAt(i) == 'r') {
-  //     t = ((6.28319 / 26) * 17);
-  //   }
-  //   if (txt1.charAt(i) == 'S' || txt1.charAt(i) == 's') {
-  //     t = ((6.28319 / 26) * 18);
-  //   }
-  //    if (txt1.charAt(i) == 'T' || txt1.charAt(i) == 't') {
-  //     t = ((6.28319 / 26) * 19);
-  //   }
-  //      if (txt1.charAt(i) == 'U' || txt1.charAt(i) == 'u') {
-  //     t = ((6.28319 / 26) * 20);
-  //   }
-  //    if (txt1.charAt(i) == 'V' || txt1.charAt(i) == 'v') {
-  //     t = ((6.28319 / 26) * 21);
-  //   }
-  //   if (txt1.charAt(i) == 'W' || txt1.charAt(i) == 'w') {
-  //     t = ((6.28319 / 26) * 22);
-  //   }
-  //    if (txt1.charAt(i) == 'X' || txt1.charAt(i) == 'x') {
-  //     t = ((6.28319 / 26) * 23);
-  //   }
-  //   if (txt1.charAt(i) == 'Y' || txt1.charAt(i) == 'y') {
-  //     t = ((6.28319 / 26) * 24);
-  //   }
-  //    if (txt1.charAt(i) == 'Z' || txt1.charAt(i) == 'z') {
-  //     t = ((6.28319 / 26) * 25);
-  //   }
-
-  // }
-
-
   bool resX = calibrateX();  // calibrate X
   if (resX == true) {
     //Serial.println("x done");
@@ -319,19 +368,35 @@ void loop() {
     if (resY == true) {  // if calibrated
       //Serial.println("xy done");
 
-      long xPos = (height / 2) * cos(t) + (width / 2);   //calculate position of letters in a circle
-      long yPos = (height / 2) * sin(t) + (height / 2);  // r*cos(t) + h
+      long xPos = width/2 ;   
+      long yPos = height/2;  // go to the middle
 
       moveToX(xPos);
       y.moveTo(yPos);
 
 
       if (xl.distanceToGo() == 0 && y.distanceToGo() == 0) {  //go to next letter
-        delay(2000);
+       
 
-        Serial.println(t);
+        for (int i = 0; i <= txt1.length();) {
+          //Serial.println(i);
+          if (xl.distanceToGo() == 0 && y.distanceToGo() == 0) {
+             delay(2000);
+            charPos(txt1.charAt(i)); //set t value
+            xPos = r * cos(t) + (width / 2);   //calculate position of letters in a circle x = r*cos(t) + h, y = r*sin(t) + w , where h and w are the coordinates of the circle center
+            yPos = r * sin(t) + (height / 2); // r = height/2 for big circle (letters), r = height/3 for small circle (numbers)
+            
+            moveToX(xPos);
+            y.moveTo(yPos);
 
-         t = t - (6.28319 / 26);                              //6.28319 == full turn
+            i++;
+          }
+            runSpeedToPositionX();
+            y.runSpeedToPosition();
+        }
+        //Serial.println(t);
+
+        // t = t - (6.28319 / 26);                              //6.28319 == full turn
       
       }
       runSpeedToPositionX();
