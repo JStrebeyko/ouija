@@ -319,8 +319,8 @@ void loop() {
     if (resY == true) {  // if calibrated
       //Serial.println("xy done");
 
-      long xPos = (height / 2.5) * cos(t) + (width / 2);   //calculate position of letters in a circle
-      long yPos = (height / 2.5) * sin(t) + (height / 2);  // r*cos(t) + h
+      long xPos = (height / 2) * cos(t) + (width / 2);   //calculate position of letters in a circle
+      long yPos = (height / 2) * sin(t) + (height / 2);  // r*cos(t) + h
 
       moveToX(xPos);
       y.moveTo(yPos);
@@ -331,7 +331,7 @@ void loop() {
 
         Serial.println(t);
 
-         t = t + (6.28319 / 26);                              //6.28319 == full turn
+         t = t - (6.28319 / 26);                              //6.28319 == full turn
       
       }
       runSpeedToPositionX();
