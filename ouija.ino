@@ -1,5 +1,3 @@
-
-//#include "Arduino.h"
 #include <AccelStepper.h>
 #include <SPI.h>
 #include <MFRC522.h>
@@ -55,6 +53,8 @@ int kontXbPin = 3;
 int kontYlPin = 4;
 int kontYrPin = 5;
 
+
+// set initial values
 long steps = 5000;
 int direction = 1;
 int directionY = 1;
@@ -125,12 +125,12 @@ boolean calibrateX() {
   while (!calibratedX) {
     int kontaktXt = digitalRead(kontXtPin);
     int kontaktXb = digitalRead(kontXbPin);
-    // kontaktorn 1 nie wykrywa nic, jedziemy
+    // contactor 1 does not detect a thing, let's go
     if (kontaktXt == 1 && direction == 1) {
       moveX(steps);
     }
 
-    // kontaktron 1 zlapal - zeruj pozycje i zawroc
+    // contactor 1 got the signal - zero out the position and turn back
     if (kontaktXt == 0 && direction == 1) {
       // set 0 position
       setCurrentPositionX(0);
@@ -139,22 +139,20 @@ boolean calibrateX() {
       direction = 0;
     }
 
-    // jedziemy w druga strone
+    // let's go the other way
     if (kontaktXb == 1 && direction == 0) {
       moveX(-steps);
     }
 
-    // dojechalismy na drugi koniec
+    // we're at the other end - stop and set width
     if (kontaktXb == 0 && direction == 0) {
 
-      // zatrzymaj
       stopX();
 
-      // set width
       width = xl.currentPosition();
       delay(1000);
 
-      // pojedzmy teraz na srodek
+      // let's travel to the middle
       Serial.print("calibratedX: width = ");
       Serial.println(width);
 
@@ -170,14 +168,8 @@ boolean calibrateX() {
 
   // when calibratedX, use runSpeedToPosition
   while (xl.distanceToGo() != 0) {
-    // if (calibratedX == true)
-    // {
+
     runSpeedToPositionX();
-    // if (xl.distanceToGo() == 0)
-    // {
-    //   return true;
-    // }
-    // }
   }
 }
 
@@ -187,29 +179,26 @@ boolean calibrateY() {
     int kontaktYl = digitalRead(kontYlPin);
     int kontaktYr = digitalRead(kontYrPin);
 
-    // kontaktorn 1 nie wykrywa nic, jedziemy
+    // contactor 1 does not detect a thing, let's go
     if (kontaktYl == 1 && directionY == 1) {
       y.move(steps);
     }
 
-    // kontaktron 1 zlapal - zeruj pozycje i zawroc
+    // contactor 1 got the signal - zero out the position and turn back
     if (kontaktYl == 0 && directionY == 1) {
       // set 0 position
       y.setCurrentPosition(0);
-
-      // Serial.print("zeroing: Ypos = ");
-      // Serial.println(y.currentPosition());
 
       // change direction
       directionY = 0;
     }
 
-    // jedziemy w druga strone
+    // let's go the other way
     if (kontaktYr == 1 && directionY == 0) {
       y.move(-steps);
     }
 
-    // dojechalismy na drugi koniec
+    // we're at the other end - stop and set width
     if (kontaktYr == 0 && directionY == 0) {
 
       // zatrzymaj
@@ -219,7 +208,7 @@ boolean calibrateY() {
       height = y.currentPosition();
       delay(1000);
 
-      // pojedzmy teraz na srodek
+      // let's travel to the middle
       Serial.print("calibratedY: height = ");
       Serial.println(height);
 
@@ -234,19 +223,14 @@ boolean calibrateY() {
   while (y.distanceToGo() != 0) {
 
     y.runSpeedToPosition();
-    // if (y.distanceToGo() == 0)
-    // {
-    // }
   }
 
-  // when not calibratedY, use runSpeed
 }
 
+
+// TODO: dedupe, abstract away the the calculation in a handy function
 void charPos(char letter = 'a') {
-  // proba literkowa
-  // String txt1 = "siema eniu tu dupa";
-  // for (int i = 0; i <= txt1.length(); i++) {
-  // Serial.println(txt1.charAt(i));
+
   if (letter != ' ' || letter != '.') {
     r = height / 2;
     if (letter == '1' || letter == '2' || letter == '3' || letter == '4' || letter == '5' || letter == '6' || letter == '7' || letter == '8' || letter == '9' || letter == '0') {
@@ -254,7 +238,6 @@ void charPos(char letter = 'a') {
     }
   }
   if (letter == ' ' || letter == '.') {
-    // t = -((6.28319 / 26) * 25);
     r = 0;
   }
 
@@ -368,14 +351,12 @@ void charPos(char letter = 'a') {
     t = -((6.28319 / 10) * 9);
   }
 
-  // }
 }
 
 void playString(String sentence = txt0) {
   if (xl.distanceToGo() == 0 && y.distanceToGo() == 0) {  // go to next letter
 
     for (int i = 0; i <= sentence.length();) {
-      // Serial.println(i);
       if (i == sentence.length() && xl.distanceToGo() == 0 && y.distanceToGo() == 0) {
           Serial.println("dojechali");
           bingo = 0;
@@ -405,27 +386,23 @@ void playString(String sentence = txt0) {
 
 void setup() {
   Serial.begin(9600);
-  // Serial.println(txt1.length());
   // Change these to suit your stepper if you want
   steppersSetup(15000.0, 10000.0, 100000.0);  // steppersSetup(maxspeed, speed, accel)
 
   moveToX(steps);
 
-  pinMode(kontXtPin, INPUT_PULLUP);  // kontaktron Xt
-  pinMode(kontXbPin, INPUT_PULLUP);  // kontatkron Xb
-  pinMode(kontYlPin, INPUT_PULLUP);  // kontaktron Yl
-  pinMode(kontYrPin, INPUT_PULLUP);  // kontatkron Yr
+  pinMode(kontXtPin, INPUT_PULLUP);  // contactor Xt
+  pinMode(kontXbPin, INPUT_PULLUP);  // contactor Xb
+  pinMode(kontYlPin, INPUT_PULLUP);  // contactor Yl
+  pinMode(kontYrPin, INPUT_PULLUP);  // contactor Yr
 
   // rfid reader setup
   pinMode(elock, OUTPUT);
   digitalWrite(elock, LOW);
   SPI.begin();      // Init SPI bus
   rfid.PCD_Init();  // Init MFRC522 card
-                    // Serial.println("Scan a MIFARE Classic PICC to demonstrate Value Blocks.");
-                    // Serial.println("HI PLS SCAN BOSS");
 
   // prepare sentences array
-
   txt[0] = txt0;
   txt[1] = txt1 + " ";
   txt[2] = txt2 + " ";
@@ -437,58 +414,29 @@ void setup() {
   txt[8] = txt8 + " ";
   txt[9] = txt9 + " ";
 
-  // Serial.println(txt[1]);
 
   calibrateX();
   calibrateY();
-  // bool resX = calibrateX();  // calibrate X
-  // if (resX == true) {
-  //   //Serial.println("x done");
-  //   bool resY = calibrateY();  // calibrate Y
-
-  //   if (resY == true) {  // if calibrated
-  //     Serial.println("yesss");
-  //   }
-  // }
 }
 
 void loop() {
 
-  // calibrateX();
-  // calibrateY();
-
-  // Serial.println("skalivrowana kurwa");
-
-  // xPos = width / 2;
-  // yPos = height / 2; // go to the middle
-
-  // moveToX(xPos);
-  // y.moveTo(yPos);
-  // runSpeedToPositionX();
-  // y.runSpeedToPosition();
-
-  // Prepare key - all keys are set to FFFFFFFFFFFFh at chip delivery from the factory.
-
   MFRC522::MIFARE_Key key;
+
   for (byte i = 0; i < 6; i++) {
     key.keyByte[i] = 0xFF;
   }
+
   // Look for new cards
   if (!rfid.PICC_IsNewCardPresent()) {
-
     return;
   }
-
-
-
 
   // Select one of the cards
   if (!rfid.PICC_ReadCardSerial()) {
     Serial.println("new card");
     return;
   }
-
-
 
   // Now a card is selected. The UID and SAK is in rfid.uid.
 
@@ -513,8 +461,6 @@ void loop() {
   }
 
 
-  //playString(txt[0]);
-  // bingo = 0;
   // defining Cards here
   if ((rfid.uid.uidByte[0] == 243) && (rfid.uid.uidByte[1] == 36) && (rfid.uid.uidByte[2] == 177) && (rfid.uid.uidByte[3] == 207)) {
     // Serial.println("Tag A detected");
@@ -549,8 +495,4 @@ void loop() {
   Serial.print("bingo: ");
   Serial.println(bingo);
   playString(txt[bingo]);
-  // if (xl.distanceToGo() == 0 && y.distanceToGo() == 0)
-  // {
-
-  // }
 }
