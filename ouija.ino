@@ -36,14 +36,14 @@ String txt0 = " ";
 
 
 //calibration switch pin
-int calirationSwitch = 2; //gnd = 0, 5v = 1
+int calirationSwitch = 0; //gnd = 0, 5v = 1
 
 // pins for rfid
 /* 
 SS pins on the shield: 25,26,27,28,29
 default: 53
 */
-#define SS_PIN 53
+#define SS_PIN 24
 #define RST_PIN 6
 
 #define dirPin 8     // pins for xl motor
@@ -457,8 +457,13 @@ void setup() {
 
 if(digitalRead(calirationSwitch)==0){ //gnd = 0, 5v = 1
 //calibrate the machine
+    Serial.println("calibration");
+
   calibrateX();
   calibrateY();
+}
+if (digitalRead(calirationSwitch)==1) {
+    Serial.println("skipped");
 }
 
 }
