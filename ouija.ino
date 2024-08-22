@@ -19,18 +19,20 @@
 
  */
 
+bool ACCEPT_DOUBLE_TAGS = true;
+
 String txt[10];
 
 // texts to display
-String txt1 = "chuj";
-String txt2 = "2 2 2 2";
-String txt3 = "3 3 3 3";
-String txt4 = "4 4 4 4";
-String txt5 = "5 5 5 5";
-String txt6 = "6 6 6 6";
-String txt7 = "7 7 7 7";
-String txt8 = "8 8 8 8";
-String txt9 = "9 9 9 9";
+String txt1 = "1";
+String txt2 = "2";
+String txt3 = "3";
+String txt4 = "4";
+String txt5 = "5";
+String txt6 = "6";
+String txt7 = "7";
+String txt8 = "8";
+String txt9 = "9";
 
 // List of Tags UIDs
 byte tagarray[][4] = {
@@ -48,7 +50,7 @@ byte tagarray[][4] = {
 String txt0 = " ";
 
 // calibration switch pin
-int calirationSwitch = 0; // gnd = 0, 5v = 1
+int calibrationSwitch = 31; // gnd = 0, 5v = 1
 
 // pins for rfid
 /*
@@ -92,6 +94,8 @@ long width = 0;
 long height = 0;
 bool calibratedX = false;
 bool calibratedY = false;
+
+int reader_already_connected = -1;
 
 // letter positioning variables
 float t = 0;
@@ -162,140 +166,144 @@ void steppersSetup(float maxSpeed, float speed, float accel)
 // calibration functions
 boolean calibrateX()
 {
-  // contactrons X
+  bool done = false;
 
   while (!calibratedX)
   {
-    int kontaktXt = digitalRead(kontXtPin);
-    int kontaktXb = digitalRead(kontXbPin);
-    // kontaktorn 1 nie wykrywa nic, jedziemy
-    if (kontaktXt == 1 && direction == 1)
-    {
-      moveX(steps);
-    }
-
-    // kontaktron 1 zlapal - zeruj pozycje i zawroc
-    if (kontaktXt == 0 && direction == 1)
-    {
-      // set 0 position
-      setCurrentPositionX(0);
-
-      // change direction
-      direction = 0;
-    }
-
-    // jedziemy w druga strone
-    if (kontaktXb == 1 && direction == 0)
-    {
-      moveX(-steps);
-    }
-
-    // dojechalismy na drugi koniec
-    if (kontaktXb == 0 && direction == 0)
+    if (!done)
     {
 
-      // zatrzymaj
-      stopX();
+      int kontaktXt = digitalRead(kontXtPin);
+      int kontaktXb = digitalRead(kontXbPin);
+      // jedź w jedną
+      if (direction == 1)
+      {
+        // kontaktorn 1 nie wykrywa nic, jedziemy
+        if (kontaktXt == 1)
+        {
+          moveX(steps);
+          // kontaktron 1 zlapal - zeruj pozycje i zawroc
+        }
+        else
+        {
+          // set 0 position
+          setCurrentPositionX(0);
 
-      // set width
-      width = xl.currentPosition();
-      delay(1000);
+          // change direction
+          direction = 0;
+        }
+      }
 
-      // pojedzmy teraz na srodek
-      Serial.print("calibratedX: width = ");
-      Serial.println(width);
+      else
+      {
+        // jedziemy w druga strone
+        if (kontaktXb == 1)
+        {
+          moveX(-steps);
+        }
+        // dojechalismy na drugi koniec
+        else
+        {
 
-      moveToX(width / 2);
+          // zatrzymaj
+          stopX();
 
-      calibratedX = true;
+          // set width
+          width = xl.currentPosition();
+          delay(1000);
+
+          // pojedzmy teraz na srodek
+
+          done = true;
+          moveToX(width / 2);
+          Serial.print("calibratedX: width = ");
+          Serial.println(width);
+        }
+      }
+      runSpeedX();
     }
+    // it is done - return
+    else
+    {
 
-    // when not calibratedX, use runSpeed
-
-    runSpeedX();
+      runSpeedToPositionX();
+    }
   }
+  calibratedX = true;
 
-  // when calibratedX, use runSpeedToPosition
-  while (xl.distanceToGo() != 0)
-  {
-    // if (calibratedX == true)
-    // {
-    runSpeedToPositionX();
-    // if (xl.distanceToGo() == 0)
-    // {
-    //   return true;
-    // }
-    // }
-  }
+  // when not calibratedX, use runSpeed
 }
 
 boolean calibrateY()
 {
-  // contactrons Y
+  bool done = false;
+
   while (!calibratedY)
   {
-    int kontaktYl = digitalRead(kontYlPin);
-    int kontaktYr = digitalRead(kontYrPin);
-
-    // kontaktorn 1 nie wykrywa nic, jedziemy
-    if (kontaktYl == 1 && directionY == 1)
-    {
-      y.move(steps);
-    }
-
-    // kontaktron 1 zlapal - zeruj pozycje i zawroc
-    if (kontaktYl == 0 && directionY == 1)
-    {
-      // set 0 position
-      y.setCurrentPosition(0);
-
-      // Serial.print("zeroing: Ypos = ");
-      // Serial.println(y.currentPosition());
-
-      // change direction
-      directionY = 0;
-    }
-
-    // jedziemy w druga strone
-    if (kontaktYr == 1 && directionY == 0)
-    {
-      y.move(-steps);
-    }
-
-    // dojechalismy na drugi koniec
-    if (kontaktYr == 0 && directionY == 0)
+    if (!done)
     {
 
-      // zatrzymaj
-      y.stop();
+      int kontaktYt = digitalRead(kontYlPin);
+      int kontaktYb = digitalRead(kontYrPin);
+      // jedź w jedną
+      if (direction == 1)
+      {
+        // kontaktorn 1 nie wykrywa nic, jedziemy
+        if (kontaktYt == 1)
+        {
+          y.move(steps);
+          // kontaktron 1 zlapal - zeruj pozycje i zawroc
+        }
+        else
+        {
+          // set 0 position
+          y.setCurrentPosition(0);
 
-      // set width
-      height = y.currentPosition();
-      delay(1000);
+          // change direction
+          directionY = 0;
+        }
+      }
 
-      // pojedzmy teraz na srodek
-      Serial.print("calibratedY: height = ");
-      Serial.println(height);
+      else
+      {
+        // jedziemy w druga strone
+        if (kontaktYb == 1)
+        {
+          y.move(-steps);
+        }
+        // dojechalismy na drugi koniec
+        else
+        {
 
-      y.moveTo(height / 2);
+          // zatrzymaj
+          y.stop();
 
-      calibratedY = true;
+          // set width
+          height = y.currentPosition();
+          delay(1000);
+
+          // pojedzmy teraz na srodek
+
+          done = true;
+          y.moveTo(height / 2);
+          Serial.print("calibratedY = ");
+          Serial.println(height);
+        }
+      }
+      y.runSpeed();
     }
-
-    y.runSpeed();
+    // it is done - return
+    else
+    {
+      y.runSpeedToPosition();
+    }
   }
-  // when calibratedY, use runSpeedToPosition
-  while (y.distanceToGo() != 0)
-  {
+  calibratedY = true;
 
-    y.runSpeedToPosition();
-    // if (y.distanceToGo() == 0)
-    // {
-    // }
-  }
-
-  // when not calibratedY, use runSpeed
+  // when not calibratedX, use runSpeed
 }
+
+// when not calibratedY, use runSpeed
 
 // letter positioning
 void charPos(char letter = 'a')
@@ -470,6 +478,8 @@ void charPos(char letter = 'a')
 // play the sentence
 void playString(String sentence = txt0)
 {
+  Serial.print("Sentence: ");
+  Serial.println(sentence);
   if (xl.distanceToGo() == 0 && y.distanceToGo() == 0)
   { // go to next letter
 
@@ -478,7 +488,9 @@ void playString(String sentence = txt0)
       // Serial.println(i);
       if (i == sentence.length() && xl.distanceToGo() == 0 && y.distanceToGo() == 0)
       {
-        Serial.println("dojechali");
+        Serial.print("dojechali >> ");
+        Serial.print("bingo :");
+        Serial.println(bingo);
         bingo = 0;
 
         Serial.println("dojechali 22");
@@ -509,6 +521,7 @@ void playString(String sentence = txt0)
  */
 void dump_byte_array(byte *buffer, byte bufferSize)
 {
+  Serial.println(buffer[0]);
   for (byte i = 0; i < bufferSize; i++)
   {
     Serial.print(buffer[i] < 0x10 ? " 0" : " ");
@@ -558,9 +571,9 @@ void setup()
   txt[9] = txt9 + " ";
 
   // set the calibration switch pin to input
-  pinMode(calirationSwitch, INPUT);
+  pinMode(calibrationSwitch, INPUT);
 
-  if (digitalRead(calirationSwitch) == 0)
+  if (digitalRead(calibrationSwitch) == 0)
   { // gnd = 0, 5v = 1
     // calibrate the machine
     Serial.println("calibration");
@@ -568,16 +581,45 @@ void setup()
     calibrateX();
     calibrateY();
   }
-  if (digitalRead(calirationSwitch) == 1)
+  if (digitalRead(calibrationSwitch) == 1)
   {
+    calibratedX = true;
+    calibratedY = true;
+    setCurrentPositionX(0);
+    y.setCurrentPosition(0);
     Serial.println("skipped");
   }
 }
 
-string get_sentence(MFRC522::Uid uid, )
+String get_sentence(MFRC522::Uid uid)
 {
-}
+  for (int x = 0; x < sizeof(tagarray); x++) // tagarray's row
+  {
+    for (int i = 0; i < uid.size; i++) // tagarray's columns
+    {
+      if (uid.uidByte[i] == tagarray[x][i]) // Comparing the UID in the buffer to the UID in the tag array.
+      {
+        if (i == uid.size - 1)
+        {
+          Serial.print("txt[x]: ");
+          Serial.println(txt[x]);
+          return txt[x];
+        }
+        continue;
+      }
+      else
+      {
+        break;
+      }
+    } // If the Tag is allowed, quit the test.
+  }
+  return txt[0];
+};
 
+String get_double_sentence(MFRC522::Uid uid_one, MFRC522::Uid uid_two)
+{
+  return "baba ";
+};
 void loop()
 {
   // stolen from https://github.com/Annaane/MultiRfid/blob/master/FourRFID.ino
@@ -587,7 +629,6 @@ void loop()
    */
   for (uint8_t reader = 0; reader < NR_OF_READERS; reader++)
   {
-
     /**
      * 2. if theres something, iterate over a) tagarray b) its row, comparing with given id
      */
@@ -599,62 +640,36 @@ void loop()
       // Show some details of the PICC (that is: the tag/card)
       Serial.print(F(": Card UID:"));
       dump_byte_array(mfrc522[reader].uid.uidByte, mfrc522[reader].uid.size);
-      Serial.println();
 
-      // defining Cards here
-      if ((mfrc522[reader].uid.uidByte[0] == 243) && (mfrc522[reader].uid.uidByte[1] == 36) && (mfrc522[reader].uid.uidByte[2] == 177) && (mfrc522[reader].uid.uidByte[3] == 207))
+      reader_already_connected = reader;
+
+      if (!ACCEPT_DOUBLE_TAGS)
       {
-        // Serial.println("Tag A detected");
-        bingo = 1;
-      }
-      else if ((mfrc522[reader].uid.uidByte[0] == 218) && (mfrc522[reader].uid.uidByte[1] == 136) && (mfrc522[reader].uid.uidByte[2] == 125) && (mfrc522[reader].uid.uidByte[3] == 122))
-      {
-        // Serial.println("Tag B detected");
-        bingo = 2;
-      }
-      else if ((mfrc522[reader].uid.uidByte[0] == 218) && (mfrc522[reader].uid.uidByte[1] == 94) && (mfrc522[reader].uid.uidByte[2] == 219) && (mfrc522[reader].uid.uidByte[3] == 122))
-      {
-        // Serial.println("Tag C detected");
-        bingo = 3;
-      }
-      else if ((mfrc522[reader].uid.uidByte[0] == 50) && (mfrc522[reader].uid.uidByte[1] == 243) && (mfrc522[reader].uid.uidByte[2] == 12) && (mfrc522[reader].uid.uidByte[3] == 255))
-      {
-        // Serial.println("Tag D detected");
-        bingo = 4;
-      }
-      else if ((mfrc522[reader].uid.uidByte[0] == 193) && (mfrc522[reader].uid.uidByte[1] == 50) && (mfrc522[reader].uid.uidByte[2] == 55) && (mfrc522[reader].uid.uidByte[3] == 13))
-      {
-        // Serial.println("Tag E detected");
-        bingo = 5;
-      }
-      else if ((mfrc522[reader].uid.uidByte[0] == 123) && (mfrc522[reader].uid.uidByte[1] == 194) && (mfrc522[reader].uid.uidByte[2] == 17) && (mfrc522[reader].uid.uidByte[3] == 255))
-      {
-        // Serial.println("Tag F detected");
-        bingo = 6;
-      }
-      else if ((mfrc522[reader].uid.uidByte[0] == 74) && (mfrc522[reader].uid.uidByte[1] == 188) && (mfrc522[reader].uid.uidByte[2] == 129) && (mfrc522[reader].uid.uidByte[3] == 129))
-      {
-        // Serial.println("Tag G detected");
-        bingo = 7;
-      }
-      else if ((mfrc522[reader].uid.uidByte[0] == 74) && (mfrc522[reader].uid.uidByte[1] == 220) && (mfrc522[reader].uid.uidByte[2] == 70) && (mfrc522[reader].uid.uidByte[3] == 129))
-      {
-        // Serial.println("Tag H detected");
-        bingo = 8;
-      }
-      else if ((mfrc522[reader].uid.uidByte[0] == 50) && (mfrc522[reader].uid.uidByte[1] == 113) && (mfrc522[reader].uid.uidByte[2] == 84) && (mfrc522[reader].uid.uidByte[3] == 207))
-      {
-        // Serial.println("Tag I detected");
-        bingo = 9;
+        String sentence = get_sentence(mfrc522[reader].uid); // sentences for one card
+        Serial.print("single sentence: ");
+        Serial.println(sentence);
+        playString(sentence);
       }
       else
       {
-        bingo = 0;
+        for (uint8_t second_reader = 0; second_reader < NR_OF_READERS; second_reader++)
+        {
+          if (mfrc522[second_reader].PICC_IsNewCardPresent() && mfrc522[second_reader].PICC_ReadCardSerial() && reader != second_reader)
+          {
+            String sentence = get_double_sentence(mfrc522[reader].uid, mfrc522[second_reader].uid);
+            Serial.print("double sentence: ");
+            Serial.println(sentence);
+            playString(sentence);
+          }
+          mfrc522[second_reader].PICC_HaltA();
+          mfrc522[second_reader].PCD_StopCrypto1();
+        }
       }
-      playString(txt[bingo]);
+      // String sentence = get_sentence(mfrc522[reader].uid); //sentences for one card
     }
+
     mfrc522[reader].PICC_HaltA();
-    // Stop encryption on PCD
+    // // Stop encryption on PCD
     mfrc522[reader].PCD_StopCrypto1();
   }
 }
