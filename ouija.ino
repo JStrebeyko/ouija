@@ -21,6 +21,7 @@
 
 String txt[10];
 
+//texts to display
 String txt1 = "chuj";
 String txt2 = "2 2 2 2";
 String txt3 = "3 3 3 3";
@@ -34,6 +35,10 @@ String txt9 = "9 9 9 9";
 String txt0 = " ";
 
 // pins for rfid
+/* 
+SS pins on the shield: 25,26,27,28,29
+default: 53
+*/
 #define SS_PIN 53
 #define RST_PIN 6
 
@@ -241,7 +246,7 @@ boolean calibrateY() {
 
   // when not calibratedY, use runSpeed
 }
-
+//letter positions
 void charPos(char letter = 'a') {
   // proba literkowa
   // String txt1 = "siema eniu tu dupa";
@@ -425,7 +430,6 @@ void setup() {
                     // Serial.println("HI PLS SCAN BOSS");
 
   // prepare sentences array
-
   txt[0] = txt0;
   txt[1] = txt1 + " ";
   txt[2] = txt2 + " ";
@@ -439,8 +443,11 @@ void setup() {
 
   // Serial.println(txt[1]);
 
+//calibrate the machine
   calibrateX();
   calibrateY();
+
+
   // bool resX = calibrateX();  // calibrate X
   // if (resX == true) {
   //   //Serial.println("x done");
