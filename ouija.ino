@@ -1,5 +1,5 @@
 
-//#include "Arduino.h"
+// #include "Arduino.h"
 #include <AccelStepper.h>
 #include <SPI.h>
 #include <MFRC522.h>
@@ -21,7 +21,7 @@
 
 String txt[10];
 
-//texts to display
+// texts to display
 String txt1 = "chuj";
 String txt2 = "2 2 2 2";
 String txt3 = "3 3 3 3";
@@ -32,26 +32,46 @@ String txt7 = "7 7 7 7";
 String txt8 = "8 8 8 8";
 String txt9 = "9 9 9 9";
 
+// List of Tags UIDs
+byte tagarray[][4] = {
+    {243, 36, 177, 207},  // Tag A
+    {218, 136, 125, 122}, // Tag B
+    {218, 94, 219, 122},  // Tag C
+    {50, 243, 12, 255},   // Tag D
+    {193, 50, 55, 13},    // Tag E
+    {123, 194, 17, 255},  // Tag F
+    {74, 188, 129, 129},  // Tag G
+    {74, 220, 70, 129},   // Tag H
+    {50, 113, 84, 207}    // Tag I
+};
+
 String txt0 = " ";
 
-
-//calibration switch pin
-int calirationSwitch = 0; //gnd = 0, 5v = 1
+// calibration switch pin
+int calirationSwitch = 0; // gnd = 0, 5v = 1
 
 // pins for rfid
-/* 
+/*
 SS pins on the shield: 25,26,27,28,29
 default: 53
 */
-#define SS_PIN 24
+
+// 5 RFID PINs
+#define SS_1_PIN 24 // Configurable, take a unused pin, only HIGH/LOW required, must be different to SS 2
+#define SS_2_PIN 25 // Configurable, take a unused pin, only HIGH/LOW required, must be different to SS 1
+#define SS_3_PIN 26 // Configurable, take a unused pin, only HIGH/LOW required, must be different to SS 2
+#define SS_4_PIN 27
+#define SS_5_PIN 28
+#define NR_OF_READERS 5
+
 #define RST_PIN 6
 
-#define dirPin 8     // pins for xl motor
-#define stepPin 9    // pins for xl motor
-#define dir2Pin 10   // pins for xr motor
-#define step2Pin 11  // pins for xr motor
-#define dir3Pin 12   // pins for y motor
-#define step3Pin 13  // pins for y motor
+#define dirPin 8    // pins for xl motor
+#define stepPin 9   // pins for xl motor
+#define dir2Pin 10  // pins for xr motor
+#define step2Pin 11 // pins for xr motor
+#define dir3Pin 12  // pins for y motor
+#define step3Pin 13 // pins for y motor
 #define motorInterfaceType 1
 // Define a stepper and the pins it will use
 AccelStepper xl = AccelStepper(motorInterfaceType, stepPin, dirPin);
@@ -75,47 +95,57 @@ bool calibratedY = false;
 
 // letter positioning variables
 float t = 0;
-long r = 0;  // radius
+long r = 0; // radius
 long xPos = 0;
 long yPos = 0;
 
 // rfid variables
 int elock = 39;
-MFRC522 rfid(SS_PIN, RST_PIN);  // Create MFRC522 instance.
+
+byte ssPins[] = {SS_1_PIN, SS_2_PIN, SS_3_PIN, SS_4_PIN, SS_5_PIN};
+MFRC522 mfrc522[NR_OF_READERS]; // Create MFRC522 instance.
+
 int bingo = 0;
 
 // decalre functions
-void runSpeedX() {
+void runSpeedX()
+{
   xl.runSpeed();
   xr.runSpeed();
 }
 
-void runSpeedToPositionX() {
+void runSpeedToPositionX()
+{
   xl.runSpeedToPosition();
   xr.runSpeedToPosition();
 }
 
-void moveToX(long x) {
+void moveToX(long x)
+{
   xl.moveTo(x);
   xr.moveTo(x);
 }
 
-void stopX() {
+void stopX()
+{
   xl.stop();
   xr.stop();
 }
 
-void moveX(long st) {
+void moveX(long st)
+{
   xl.move(st);
   xr.move(st);
 }
 
-void setCurrentPositionX(long pos) {
+void setCurrentPositionX(long pos)
+{
   xl.setCurrentPosition(pos);
   xr.setCurrentPosition(pos);
 }
 
-void steppersSetup(float maxSpeed, float speed, float accel) {
+void steppersSetup(float maxSpeed, float speed, float accel)
+{
   xl.setMaxSpeed(maxSpeed);
   xl.setSpeed(speed);
   xl.setAcceleration(accel);
@@ -129,20 +159,24 @@ void steppersSetup(float maxSpeed, float speed, float accel) {
   y.setAcceleration(accel);
 }
 
-//calibration functions
-boolean calibrateX() {
+// calibration functions
+boolean calibrateX()
+{
   // contactrons X
 
-  while (!calibratedX) {
+  while (!calibratedX)
+  {
     int kontaktXt = digitalRead(kontXtPin);
     int kontaktXb = digitalRead(kontXbPin);
     // kontaktorn 1 nie wykrywa nic, jedziemy
-    if (kontaktXt == 1 && direction == 1) {
+    if (kontaktXt == 1 && direction == 1)
+    {
       moveX(steps);
     }
 
     // kontaktron 1 zlapal - zeruj pozycje i zawroc
-    if (kontaktXt == 0 && direction == 1) {
+    if (kontaktXt == 0 && direction == 1)
+    {
       // set 0 position
       setCurrentPositionX(0);
 
@@ -151,12 +185,14 @@ boolean calibrateX() {
     }
 
     // jedziemy w druga strone
-    if (kontaktXb == 1 && direction == 0) {
+    if (kontaktXb == 1 && direction == 0)
+    {
       moveX(-steps);
     }
 
     // dojechalismy na drugi koniec
-    if (kontaktXb == 0 && direction == 0) {
+    if (kontaktXb == 0 && direction == 0)
+    {
 
       // zatrzymaj
       stopX();
@@ -180,7 +216,8 @@ boolean calibrateX() {
   }
 
   // when calibratedX, use runSpeedToPosition
-  while (xl.distanceToGo() != 0) {
+  while (xl.distanceToGo() != 0)
+  {
     // if (calibratedX == true)
     // {
     runSpeedToPositionX();
@@ -192,19 +229,23 @@ boolean calibrateX() {
   }
 }
 
-boolean calibrateY() { 
+boolean calibrateY()
+{
   // contactrons Y
-  while (!calibratedY) {
+  while (!calibratedY)
+  {
     int kontaktYl = digitalRead(kontYlPin);
     int kontaktYr = digitalRead(kontYrPin);
 
     // kontaktorn 1 nie wykrywa nic, jedziemy
-    if (kontaktYl == 1 && directionY == 1) {
+    if (kontaktYl == 1 && directionY == 1)
+    {
       y.move(steps);
     }
 
     // kontaktron 1 zlapal - zeruj pozycje i zawroc
-    if (kontaktYl == 0 && directionY == 1) {
+    if (kontaktYl == 0 && directionY == 1)
+    {
       // set 0 position
       y.setCurrentPosition(0);
 
@@ -216,12 +257,14 @@ boolean calibrateY() {
     }
 
     // jedziemy w druga strone
-    if (kontaktYr == 1 && directionY == 0) {
+    if (kontaktYr == 1 && directionY == 0)
+    {
       y.move(-steps);
     }
 
     // dojechalismy na drugi koniec
-    if (kontaktYr == 0 && directionY == 0) {
+    if (kontaktYr == 0 && directionY == 0)
+    {
 
       // zatrzymaj
       y.stop();
@@ -242,7 +285,8 @@ boolean calibrateY() {
     y.runSpeed();
   }
   // when calibratedY, use runSpeedToPosition
-  while (y.distanceToGo() != 0) {
+  while (y.distanceToGo() != 0)
+  {
 
     y.runSpeedToPosition();
     // if (y.distanceToGo() == 0)
@@ -253,157 +297,201 @@ boolean calibrateY() {
   // when not calibratedY, use runSpeed
 }
 
-//letter positioning
-void charPos(char letter = 'a') { //letter positions
+// letter positioning
+void charPos(char letter = 'a')
+{ // letter positions
   // proba literkowa
   // String txt1 = "siema eniu tu dupa";
   // for (int i = 0; i <= txt1.length(); i++) {
   // Serial.println(txt1.charAt(i));
-  if (letter != ' ' || letter != '.') {
+  if (letter != ' ' || letter != '.')
+  {
     r = height / 2;
-    if (letter == '1' || letter == '2' || letter == '3' || letter == '4' || letter == '5' || letter == '6' || letter == '7' || letter == '8' || letter == '9' || letter == '0') {
+    if (letter == '1' || letter == '2' || letter == '3' || letter == '4' || letter == '5' || letter == '6' || letter == '7' || letter == '8' || letter == '9' || letter == '0')
+    {
       r = height / 3.5;
     }
   }
-  if (letter == ' ' || letter == '.') {
+  if (letter == ' ' || letter == '.')
+  {
     // t = -((6.28319 / 26) * 25);
     r = 0;
   }
 
-  if (letter == 'A' || letter == 'a') {
+  if (letter == 'A' || letter == 'a')
+  {
     t = -((6.28319 / 26) * 0);
   }
-  if (letter == 'B' || letter == 'b') {
+  if (letter == 'B' || letter == 'b')
+  {
     t = -((6.28319 / 26) * 1);
   }
-  if (letter == 'C' || letter == 'c') {
+  if (letter == 'C' || letter == 'c')
+  {
     t = -((6.28319 / 26) * 2);
   }
-  if (letter == 'D' || letter == 'd') {
+  if (letter == 'D' || letter == 'd')
+  {
     t = -((6.28319 / 26) * 3);
   }
-  if (letter == 'E' || letter == 'e') {
+  if (letter == 'E' || letter == 'e')
+  {
     t = -((6.28319 / 26) * 4);
   }
-  if (letter == 'F' || letter == 'f') {
+  if (letter == 'F' || letter == 'f')
+  {
     t = -((6.28319 / 26) * 5);
   }
-  if (letter == 'G' || letter == 'g') {
+  if (letter == 'G' || letter == 'g')
+  {
     t = -((6.28319 / 26) * 6);
   }
-  if (letter == 'H' || letter == 'h') {
+  if (letter == 'H' || letter == 'h')
+  {
     t = -((6.28319 / 26) * 7);
   }
-  if (letter == 'I' || letter == 'i') {
+  if (letter == 'I' || letter == 'i')
+  {
     t = -((6.28319 / 26) * 8);
   }
-  if (letter == 'J' || letter == 'j') {
+  if (letter == 'J' || letter == 'j')
+  {
     t = -((6.28319 / 26) * 9);
   }
-  if (letter == 'K' || letter == 'k') {
+  if (letter == 'K' || letter == 'k')
+  {
     t = -((6.28319 / 26) * 10);
   }
-  if (letter == 'L' || letter == 'l') {
+  if (letter == 'L' || letter == 'l')
+  {
     t = -((6.28319 / 26) * 11);
   }
-  if (letter == 'M' || letter == 'm') {
+  if (letter == 'M' || letter == 'm')
+  {
     t = -((6.28319 / 26) * 12);
   }
-  if (letter == 'N' || letter == 'n') {
+  if (letter == 'N' || letter == 'n')
+  {
     t = -((6.28319 / 26) * 13);
   }
-  if (letter == 'O' || letter == 'o') {
+  if (letter == 'O' || letter == 'o')
+  {
     t = -((6.28319 / 26) * 14);
   }
-  if (letter == 'P' || letter == 'p') {
+  if (letter == 'P' || letter == 'p')
+  {
     t = -((6.28319 / 26) * 15);
   }
-  if (letter == 'Q' || letter == 'q') {
+  if (letter == 'Q' || letter == 'q')
+  {
     t = -((6.28319 / 26) * 16);
   }
-  if (letter == 'R' || letter == 'r') {
+  if (letter == 'R' || letter == 'r')
+  {
     t = -((6.28319 / 26) * 17);
   }
-  if (letter == 'S' || letter == 's') {
+  if (letter == 'S' || letter == 's')
+  {
     t = -((6.28319 / 26) * 18);
   }
-  if (letter == 'T' || letter == 't') {
+  if (letter == 'T' || letter == 't')
+  {
     t = -((6.28319 / 26) * 19);
   }
-  if (letter == 'U' || letter == 'u') {
+  if (letter == 'U' || letter == 'u')
+  {
     t = -((6.28319 / 26) * 20);
   }
-  if (letter == 'V' || letter == 'v') {
+  if (letter == 'V' || letter == 'v')
+  {
     t = -((6.28319 / 26) * 21);
   }
-  if (letter == 'W' || letter == 'w') {
+  if (letter == 'W' || letter == 'w')
+  {
     t = -((6.28319 / 26) * 22);
   }
-  if (letter == 'X' || letter == 'x') {
+  if (letter == 'X' || letter == 'x')
+  {
     t = -((6.28319 / 26) * 23);
   }
-  if (letter == 'Y' || letter == 'y') {
+  if (letter == 'Y' || letter == 'y')
+  {
     t = -((6.28319 / 26) * 24);
   }
-  if (letter == 'Z' || letter == 'z') {
+  if (letter == 'Z' || letter == 'z')
+  {
     t = -((6.28319 / 26) * 25);
   }
 
-  if (letter == '0') {
+  if (letter == '0')
+  {
     t = -((6.28319 / 10) * 0);
   }
-  if (letter == '1') {
+  if (letter == '1')
+  {
     t = -((6.28319 / 10) * 1);
   }
-  if (letter == '2') {
+  if (letter == '2')
+  {
     t = -((6.28319 / 10) * 2);
   }
-  if (letter == '3') {
+  if (letter == '3')
+  {
     t = -((6.28319 / 10) * 3);
   }
-  if (letter == '4') {
+  if (letter == '4')
+  {
     t = -((6.28319 / 10) * 4);
   }
-  if (letter == '5') {
+  if (letter == '5')
+  {
     t = -((6.28319 / 10) * 5);
   }
-  if (letter == '6') {
+  if (letter == '6')
+  {
     t = -((6.28319 / 10) * 6);
   }
-  if (letter == '7') {
+  if (letter == '7')
+  {
     t = -((6.28319 / 10) * 7);
   }
-  if (letter == '8') {
+  if (letter == '8')
+  {
     t = -((6.28319 / 10) * 8);
   }
-  if (letter == '9') {
+  if (letter == '9')
+  {
     t = -((6.28319 / 10) * 9);
   }
 
   // }
 }
 
-//play the sentence
-void playString(String sentence = txt0) {
-  if (xl.distanceToGo() == 0 && y.distanceToGo() == 0) {  // go to next letter
+// play the sentence
+void playString(String sentence = txt0)
+{
+  if (xl.distanceToGo() == 0 && y.distanceToGo() == 0)
+  { // go to next letter
 
-    for (int i = 0; i <= sentence.length();) {
+    for (int i = 0; i <= sentence.length();)
+    {
       // Serial.println(i);
-      if (i == sentence.length() && xl.distanceToGo() == 0 && y.distanceToGo() == 0) {
-          Serial.println("dojechali");
-          bingo = 0;
-          
-          Serial.println("dojechali 22");
-          break;
-        }
-      if (xl.distanceToGo() == 0 && y.distanceToGo() == 0) {
+      if (i == sentence.length() && xl.distanceToGo() == 0 && y.distanceToGo() == 0)
+      {
+        Serial.println("dojechali");
+        bingo = 0;
+
+        Serial.println("dojechali 22");
+        break;
+      }
+      if (xl.distanceToGo() == 0 && y.distanceToGo() == 0)
+      {
 
         delay(2000);
 
-        
-        charPos(sentence.charAt(i));       // set t value
-        xPos = r * cos(t) + (width / 2);   // calculate position of letters in a circle x = r*cos(t) + h, y = r*sin(t) + w , where h and w are the coordinates of the circle center
-        yPos = r * sin(t) + (height / 2);  // r = height/2 for big circle (letters), r = height/3 for small circle (numbers)
+        charPos(sentence.charAt(i));      // set t value
+        xPos = r * cos(t) + (width / 2);  // calculate position of letters in a circle x = r*cos(t) + h, y = r*sin(t) + w , where h and w are the coordinates of the circle center
+        yPos = r * sin(t) + (height / 2); // r = height/2 for big circle (letters), r = height/3 for small circle (numbers)
 
         moveToX(xPos);
         y.moveTo(yPos);
@@ -416,29 +504,46 @@ void playString(String sentence = txt0) {
   }
 }
 
-void setup() {
+/**
+ * Helper routine to dump a byte array as hex values to Serial.
+ */
+void dump_byte_array(byte *buffer, byte bufferSize)
+{
+  for (byte i = 0; i < bufferSize; i++)
+  {
+    Serial.print(buffer[i] < 0x10 ? " 0" : " ");
+    Serial.print(buffer[i], HEX);
+  }
+}
+
+void setup()
+{
   Serial.begin(9600);
 
-
-
-
   // Change these to suit your stepper if you want
-  steppersSetup(15000.0, 10000.0, 100000.0);  // steppersSetup(maxspeed, speed, accel)
+  steppersSetup(15000.0, 10000.0, 100000.0); // steppersSetup(maxspeed, speed, accel)
 
   moveToX(steps);
 
-  pinMode(kontXtPin, INPUT_PULLUP);  // kontaktron Xt
-  pinMode(kontXbPin, INPUT_PULLUP);  // kontatkron Xb
-  pinMode(kontYlPin, INPUT_PULLUP);  // kontaktron Yl
-  pinMode(kontYrPin, INPUT_PULLUP);  // kontatkron Yr
+  pinMode(kontXtPin, INPUT_PULLUP); // kontaktron Xt
+  pinMode(kontXbPin, INPUT_PULLUP); // kontatkron Xb
+  pinMode(kontYlPin, INPUT_PULLUP); // kontaktron Yl
+  pinMode(kontYrPin, INPUT_PULLUP); // kontatkron Yr
 
   // rfid reader setup
   pinMode(elock, OUTPUT);
   digitalWrite(elock, LOW);
-  SPI.begin();      // Init SPI bus
-  rfid.PCD_Init();  // Init MFRC522 card
-                    // Serial.println("Scan a MIFARE Classic PICC to demonstrate Value Blocks.");
-                    // Serial.println("HI PLS SCAN BOSS");
+
+  SPI.begin(); // Init SPI bus
+
+  for (uint8_t reader = 0; reader < NR_OF_READERS; reader++)
+  {
+    mfrc522[reader].PCD_Init(ssPins[reader], RST_PIN); // Init each MFRC522 card
+    Serial.print(F("Reader "));
+    Serial.print(reader);
+    Serial.print(F(": "));
+    mfrc522[reader].PCD_DumpVersionToSerial();
+  }
 
   // prepare sentences array
   txt[0] = txt0;
@@ -452,103 +557,104 @@ void setup() {
   txt[8] = txt8 + " ";
   txt[9] = txt9 + " ";
 
-//set the calibration switch pin to input
-    pinMode(calirationSwitch, INPUT);
+  // set the calibration switch pin to input
+  pinMode(calirationSwitch, INPUT);
 
-if(digitalRead(calirationSwitch)==0){ //gnd = 0, 5v = 1
-//calibrate the machine
+  if (digitalRead(calirationSwitch) == 0)
+  { // gnd = 0, 5v = 1
+    // calibrate the machine
     Serial.println("calibration");
 
-  calibrateX();
-  calibrateY();
-}
-if (digitalRead(calirationSwitch)==1) {
+    calibrateX();
+    calibrateY();
+  }
+  if (digitalRead(calirationSwitch) == 1)
+  {
     Serial.println("skipped");
+  }
 }
 
+string get_sentence(MFRC522::Uid uid, )
+{
 }
 
-void loop() {
+void loop()
+{
+  // stolen from https://github.com/Annaane/MultiRfid/blob/master/FourRFID.ino
 
+  /**
+   * 1. iterate over readers
+   */
+  for (uint8_t reader = 0; reader < NR_OF_READERS; reader++)
+  {
 
-  MFRC522::MIFARE_Key key;
-  for (byte i = 0; i < 6; i++) {
-    key.keyByte[i] = 0xFF;
-  }
-  // Look for new cards
-  if (!rfid.PICC_IsNewCardPresent()) {
+    /**
+     * 2. if theres something, iterate over a) tagarray b) its row, comparing with given id
+     */
+    if (mfrc522[reader].PICC_IsNewCardPresent() && mfrc522[reader].PICC_ReadCardSerial())
+    {
+      Serial.print(F("Reader "));
+      Serial.print(reader);
 
-    return;
-  }
+      // Show some details of the PICC (that is: the tag/card)
+      Serial.print(F(": Card UID:"));
+      dump_byte_array(mfrc522[reader].uid.uidByte, mfrc522[reader].uid.size);
+      Serial.println();
 
-
-
-
-  // Select one of the cards
-  if (!rfid.PICC_ReadCardSerial()) {
-    Serial.println("new card");
-    return;
-  }
-
-
-
-  // Now a card is selected. The UID and SAK is in rfid.uid.
-
-  // Dump UID
-  Serial.print("Card UID:");
-  for (byte i = 0; i < rfid.uid.size; i++) {
-    Serial.print(rfid.uid.uidByte[i] < 0x10 ? " 0" : " ");
-    Serial.print(rfid.uid.uidByte[i], DEC);
-    if (i >= rfid.uid.size -1){
-      Serial.println(" ");
+      // defining Cards here
+      if ((mfrc522[reader].uid.uidByte[0] == 243) && (mfrc522[reader].uid.uidByte[1] == 36) && (mfrc522[reader].uid.uidByte[2] == 177) && (mfrc522[reader].uid.uidByte[3] == 207))
+      {
+        // Serial.println("Tag A detected");
+        bingo = 1;
+      }
+      else if ((mfrc522[reader].uid.uidByte[0] == 218) && (mfrc522[reader].uid.uidByte[1] == 136) && (mfrc522[reader].uid.uidByte[2] == 125) && (mfrc522[reader].uid.uidByte[3] == 122))
+      {
+        // Serial.println("Tag B detected");
+        bingo = 2;
+      }
+      else if ((mfrc522[reader].uid.uidByte[0] == 218) && (mfrc522[reader].uid.uidByte[1] == 94) && (mfrc522[reader].uid.uidByte[2] == 219) && (mfrc522[reader].uid.uidByte[3] == 122))
+      {
+        // Serial.println("Tag C detected");
+        bingo = 3;
+      }
+      else if ((mfrc522[reader].uid.uidByte[0] == 50) && (mfrc522[reader].uid.uidByte[1] == 243) && (mfrc522[reader].uid.uidByte[2] == 12) && (mfrc522[reader].uid.uidByte[3] == 255))
+      {
+        // Serial.println("Tag D detected");
+        bingo = 4;
+      }
+      else if ((mfrc522[reader].uid.uidByte[0] == 193) && (mfrc522[reader].uid.uidByte[1] == 50) && (mfrc522[reader].uid.uidByte[2] == 55) && (mfrc522[reader].uid.uidByte[3] == 13))
+      {
+        // Serial.println("Tag E detected");
+        bingo = 5;
+      }
+      else if ((mfrc522[reader].uid.uidByte[0] == 123) && (mfrc522[reader].uid.uidByte[1] == 194) && (mfrc522[reader].uid.uidByte[2] == 17) && (mfrc522[reader].uid.uidByte[3] == 255))
+      {
+        // Serial.println("Tag F detected");
+        bingo = 6;
+      }
+      else if ((mfrc522[reader].uid.uidByte[0] == 74) && (mfrc522[reader].uid.uidByte[1] == 188) && (mfrc522[reader].uid.uidByte[2] == 129) && (mfrc522[reader].uid.uidByte[3] == 129))
+      {
+        // Serial.println("Tag G detected");
+        bingo = 7;
+      }
+      else if ((mfrc522[reader].uid.uidByte[0] == 74) && (mfrc522[reader].uid.uidByte[1] == 220) && (mfrc522[reader].uid.uidByte[2] == 70) && (mfrc522[reader].uid.uidByte[3] == 129))
+      {
+        // Serial.println("Tag H detected");
+        bingo = 8;
+      }
+      else if ((mfrc522[reader].uid.uidByte[0] == 50) && (mfrc522[reader].uid.uidByte[1] == 113) && (mfrc522[reader].uid.uidByte[2] == 84) && (mfrc522[reader].uid.uidByte[3] == 207))
+      {
+        // Serial.println("Tag I detected");
+        bingo = 9;
+      }
+      else
+      {
+        bingo = 0;
+      }
+      playString(txt[bingo]);
     }
+    mfrc522[reader].PICC_HaltA();
+    // Stop encryption on PCD
+    mfrc522[reader].PCD_StopCrypto1();
   }
-
-
-  // Dump PICC type
-  byte piccType = rfid.PICC_GetType(rfid.uid.sak);
-  //    Serial.print("PICC type: ");
-  // Serial.println(mfrc522.PICC_GetTypeName(piccType));
-  if (piccType != MFRC522::PICC_TYPE_MIFARE_MINI && piccType != MFRC522::PICC_TYPE_MIFARE_1K && piccType != MFRC522::PICC_TYPE_MIFARE_4K) {
-    // Serial.println("This sample only works with MIFARE Classic cards.");
-    return;
-  }
-
-
-
-  // defining Cards here
-  if ((rfid.uid.uidByte[0] == 243) && (rfid.uid.uidByte[1] == 36) && (rfid.uid.uidByte[2] == 177) && (rfid.uid.uidByte[3] == 207)) {
-    // Serial.println("Tag A detected");
-    bingo = 1;
-  } else if ((rfid.uid.uidByte[0] == 218) && (rfid.uid.uidByte[1] == 136) && (rfid.uid.uidByte[2] == 125) && (rfid.uid.uidByte[3] == 122)) {
-    //Serial.println("Tag B detected");
-    bingo = 2;
-  } else if ((rfid.uid.uidByte[0] == 218) && (rfid.uid.uidByte[1] == 94) && (rfid.uid.uidByte[2] == 219) && (rfid.uid.uidByte[3] == 122)) {
-    // Serial.println("Tag C detected");
-    bingo = 3;
-  } else if ((rfid.uid.uidByte[0] == 50) && (rfid.uid.uidByte[1] == 243) && (rfid.uid.uidByte[2] == 12) && (rfid.uid.uidByte[3] == 255)) {
-    // Serial.println("Tag D detected");
-    bingo = 4;
-  } else if ((rfid.uid.uidByte[0] == 193) && (rfid.uid.uidByte[1] == 50) && (rfid.uid.uidByte[2] == 55) && (rfid.uid.uidByte[3] == 13)) {
-    // Serial.println("Tag E detected");
-    bingo = 5;
-  } else if ((rfid.uid.uidByte[0] == 123) && (rfid.uid.uidByte[1] == 194) && (rfid.uid.uidByte[2] == 17) && (rfid.uid.uidByte[3] == 255)) {
-    // Serial.println("Tag F detected");
-    bingo = 6;
-  } else if ((rfid.uid.uidByte[0] == 74) && (rfid.uid.uidByte[1] == 188) && (rfid.uid.uidByte[2] == 129) && (rfid.uid.uidByte[3] == 129)) {
-    // Serial.println("Tag G detected");
-    bingo = 7;
-  } else if ((rfid.uid.uidByte[0] == 74) && (rfid.uid.uidByte[1] == 220) && (rfid.uid.uidByte[2] == 70) && (rfid.uid.uidByte[3] == 129)) {
-    // Serial.println("Tag H detected");
-    bingo = 8;
-  } else if ((rfid.uid.uidByte[0] == 50) && (rfid.uid.uidByte[1] == 113) && (rfid.uid.uidByte[2] == 84) && (rfid.uid.uidByte[3] == 207)) {
-    // Serial.println("Tag I detected");
-    bingo = 9;
-  } else {
-    bingo = 0;
-  }
-  Serial.print("bingo: ");
-  Serial.println(bingo);
-  playString(txt[bingo]);
-
 }
