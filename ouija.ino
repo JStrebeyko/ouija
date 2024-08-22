@@ -34,6 +34,10 @@ String txt9 = "9 9 9 9";
 
 String txt0 = " ";
 
+
+//calibration switch pin
+int calirationSwitch = 2; //gnd = 0, 5v = 1
+
 // pins for rfid
 /* 
 SS pins on the shield: 25,26,27,28,29
@@ -415,6 +419,9 @@ void playString(String sentence = txt0) {
 void setup() {
   Serial.begin(9600);
 
+
+
+
   // Change these to suit your stepper if you want
   steppersSetup(15000.0, 10000.0, 100000.0);  // steppersSetup(maxspeed, speed, accel)
 
@@ -445,10 +452,14 @@ void setup() {
   txt[8] = txt8 + " ";
   txt[9] = txt9 + " ";
 
+//set the calibration switch pin to input
+    pinMode(calirationSwitch, INPUT);
 
+if(digitalRead(calirationSwitch)==0){ //gnd = 0, 5v = 1
 //calibrate the machine
   calibrateX();
   calibrateY();
+}
 
 }
 
