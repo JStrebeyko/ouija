@@ -60,6 +60,7 @@ int kontXbPin = 3;
 int kontYlPin = 4;
 int kontYrPin = 5;
 
+// stepper settings
 long steps = 5000;
 int direction = 1;
 int directionY = 1;
@@ -68,9 +69,9 @@ long height = 0;
 bool calibratedX = false;
 bool calibratedY = false;
 
+// letter positioning variables
 float t = 0;
 long r = 0;  // radius
-
 long xPos = 0;
 long yPos = 0;
 
@@ -124,6 +125,7 @@ void steppersSetup(float maxSpeed, float speed, float accel) {
   y.setAcceleration(accel);
 }
 
+//calibration functions
 boolean calibrateX() {
   // contactrons X
 
@@ -186,7 +188,7 @@ boolean calibrateX() {
   }
 }
 
-boolean calibrateY() {
+boolean calibrateY() { 
   // contactrons Y
   while (!calibratedY) {
     int kontaktYl = digitalRead(kontYlPin);
@@ -246,8 +248,9 @@ boolean calibrateY() {
 
   // when not calibratedY, use runSpeed
 }
-//letter positions
-void charPos(char letter = 'a') {
+
+//letter positioning
+void charPos(char letter = 'a') { //letter positions
   // proba literkowa
   // String txt1 = "siema eniu tu dupa";
   // for (int i = 0; i <= txt1.length(); i++) {
@@ -376,6 +379,7 @@ void charPos(char letter = 'a') {
   // }
 }
 
+//play the sentence
 void playString(String sentence = txt0) {
   if (xl.distanceToGo() == 0 && y.distanceToGo() == 0) {  // go to next letter
 
@@ -410,7 +414,7 @@ void playString(String sentence = txt0) {
 
 void setup() {
   Serial.begin(9600);
-  // Serial.println(txt1.length());
+
   // Change these to suit your stepper if you want
   steppersSetup(15000.0, 10000.0, 100000.0);  // steppersSetup(maxspeed, speed, accel)
 
@@ -441,40 +445,15 @@ void setup() {
   txt[8] = txt8 + " ";
   txt[9] = txt9 + " ";
 
-  // Serial.println(txt[1]);
 
 //calibrate the machine
   calibrateX();
   calibrateY();
 
-
-  // bool resX = calibrateX();  // calibrate X
-  // if (resX == true) {
-  //   //Serial.println("x done");
-  //   bool resY = calibrateY();  // calibrate Y
-
-  //   if (resY == true) {  // if calibrated
-  //     Serial.println("yesss");
-  //   }
-  // }
 }
 
 void loop() {
 
-  // calibrateX();
-  // calibrateY();
-
-  // Serial.println("skalivrowana kurwa");
-
-  // xPos = width / 2;
-  // yPos = height / 2; // go to the middle
-
-  // moveToX(xPos);
-  // y.moveTo(yPos);
-  // runSpeedToPositionX();
-  // y.runSpeedToPosition();
-
-  // Prepare key - all keys are set to FFFFFFFFFFFFh at chip delivery from the factory.
 
   MFRC522::MIFARE_Key key;
   for (byte i = 0; i < 6; i++) {
@@ -520,8 +499,7 @@ void loop() {
   }
 
 
-  //playString(txt[0]);
-  // bingo = 0;
+
   // defining Cards here
   if ((rfid.uid.uidByte[0] == 243) && (rfid.uid.uidByte[1] == 36) && (rfid.uid.uidByte[2] == 177) && (rfid.uid.uidByte[3] == 207)) {
     // Serial.println("Tag A detected");
@@ -556,8 +534,5 @@ void loop() {
   Serial.print("bingo: ");
   Serial.println(bingo);
   playString(txt[bingo]);
-  // if (xl.distanceToGo() == 0 && y.distanceToGo() == 0)
-  // {
 
-  // }
 }
