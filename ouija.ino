@@ -19,7 +19,7 @@
 
  */
 
-bool ACCEPT_DOUBLE_TAGS = true;
+bool ACCEPT_DOUBLE_TAGS = true; //trus
 
 String txt[10];
 
@@ -88,8 +88,8 @@ int kontYrPin = 5;
 
 // stepper settings
 long steps = 5000;
-int direction = 1;
-int directionY = 1;
+// int direction = 1;
+// int directionY = 1;
 long width = 0;
 long height = 0;
 bool calibratedX = false;
@@ -164,8 +164,10 @@ void steppersSetup(float maxSpeed, float speed, float accel)
 }
 
 // calibration functions
-boolean calibrateX()
+bool calibrateX()
 {
+
+  int direction = 1;
   bool done = false;
 
   while (!calibratedX)
@@ -227,29 +229,40 @@ boolean calibrateX()
     {
 
       runSpeedToPositionX();
+      if (xl.distanceToGo() == 0)
+      { 
+      calibratedX = true;
+      Serial.println("skonczylismy kalibrowanie X");
+      
+      }
     }
+   
   }
-  calibratedX = true;
-
+  
+//return true;
   // when not calibratedX, use runSpeed
 }
 
-boolean calibrateY()
+bool calibrateY()
 {
   bool done = false;
-
+Serial.println("zaczynamy y");
+int direction = 0;
   while (!calibratedY)
   {
     if (!done)
     {
 
-      int kontaktYt = digitalRead(kontYlPin);
-      int kontaktYb = digitalRead(kontYrPin);
+      int kontaktYl = digitalRead(kontYlPin);
+      int kontaktYr = digitalRead(kontYrPin);
+      // Serial.println("kontYl  " + kontaktYl);
+      // Serial.println("kontYr  " + kontaktYr);
+
       // jedź w jedną
-      if (direction == 1)
+      if (direction == 0)
       {
         // kontaktorn 1 nie wykrywa nic, jedziemy
-        if (kontaktYt == 1)
+        if (kontaktYl == 1)
         {
           y.move(steps);
           // kontaktron 1 zlapal - zeruj pozycje i zawroc
@@ -258,16 +271,16 @@ boolean calibrateY()
         {
           // set 0 position
           y.setCurrentPosition(0);
-
+Serial.println("y change direction  ");
           // change direction
-          directionY = 0;
+          direction = 1;
         }
       }
 
       else
       {
         // jedziemy w druga strone
-        if (kontaktYb == 1)
+        if (kontaktYr == 1)
         {
           y.move(-steps);
         }
@@ -288,17 +301,24 @@ boolean calibrateY()
           y.moveTo(height / 2);
           Serial.print("calibratedY = ");
           Serial.println(height);
+          continue;
         }
       }
       y.runSpeed();
     }
     // it is done - return
-    else
+        else
     {
+
       y.runSpeedToPosition();
+      if (y.distanceToGo() == 0)
+      { 
+      calibratedY = true;
+      Serial.println("skonczylismy kalibrowanie Y");
+      return true;
+      }
     }
   }
-  calibratedY = true;
 
   // when not calibratedX, use runSpeed
 }
