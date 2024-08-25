@@ -19,7 +19,7 @@
 
  */
 
-bool ACCEPT_DOUBLE_TAGS = true; //trus
+bool ACCEPT_DOUBLE_TAGS = false; //trus
 
 String txt[10];
 
@@ -50,7 +50,7 @@ byte tagarray[][4] = {
 String txt0 = " ";
 
 // calibration switch pin
-int calibrationSwitch = 31; // gnd = 0, 5v = 1
+//int calibrationSwitch = 31; // gnd = 0, 5v = 1
 
 // pins for rfid
 /*
@@ -591,24 +591,26 @@ void setup()
   txt[9] = txt9 + " ";
 
   // set the calibration switch pin to input
-  pinMode(calibrationSwitch, INPUT);
+  //pinMode(calibrationSwitch, INPUT);
 
-  if (digitalRead(calibrationSwitch) == 0)
-  { // gnd = 0, 5v = 1
+  // if (digitalRead(calibrationSwitch) == 0)
+  // { // gnd = 0, 5v = 1
+
     // calibrate the machine
     Serial.println("calibration");
 
     calibrateX();
     calibrateY();
-  }
-  if (digitalRead(calibrationSwitch) == 1)
-  {
-    calibratedX = true;
-    calibratedY = true;
-    setCurrentPositionX(0);
-    y.setCurrentPosition(0);
-    Serial.println("skipped");
-  }
+
+  // }
+  // if (digitalRead(calibrationSwitch) == 1)
+  // {
+  //   calibratedX = true;
+  //   calibratedY = true;
+  //   setCurrentPositionX(0);
+  //   y.setCurrentPosition(0);
+  //   Serial.println("skipped");
+  // }
 }
 
 String get_sentence(MFRC522::Uid uid)
