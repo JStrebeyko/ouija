@@ -19,53 +19,6 @@
 
  */
 
-// bool ACCEPT_DOUBLE_TAGS = false; //trus
-
-// String txt[10];
-
-// // texts to display
-// String txt1 = "1";
-// String txt2 = "2";
-// String txt3 = "3";
-// String txt4 = "4";
-// String txt5 = "5";
-// String txt6 = "6";
-// String txt7 = "7";
-// String txt8 = "8";
-// String txt9 = "9";
-
-// // List of Tags UIDs
-// byte tagarray[][4] = {
-//     {243, 36, 177, 207},  // Tag A
-//     {218, 136, 125, 122}, // Tag B
-//     {218, 94, 219, 122},  // Tag C
-//     {50, 243, 12, 255},   // Tag D
-//     {193, 50, 55, 13},    // Tag E
-//     {123, 194, 17, 255},  // Tag F
-//     {74, 188, 129, 129},  // Tag G
-//     {74, 220, 70, 129},   // Tag H
-//     {50, 113, 84, 207}    // Tag I
-// };
-
-// String txt0 = " ";
-
-// calibration switch pin
-// int calibrationSwitch = 31; // gnd = 0, 5v = 1
-
-// pins for rfid
-/*
-SS pins on the shield: 25,26,27,28,29
-default: 53
-*/
-
-// // 5 RFID PINs
-// #define SS_1_PIN 24 // Configurable, take a unused pin, only HIGH/LOW required, must be different to SS 2
-// #define SS_2_PIN 25 // Configurable, take a unused pin, only HIGH/LOW required, must be different to SS 1
-// #define SS_3_PIN 26 // Configurable, take a unused pin, only HIGH/LOW required, must be different to SS 2
-// #define SS_4_PIN 27
-// #define SS_5_PIN 28
-// #define NR_OF_READERS 5
-
 #define RST_PIN 6
 
 #define dirPin 8    // pins for xl motor
@@ -95,21 +48,11 @@ long height = 0;
 bool calibratedX = false;
 bool calibratedY = false;
 
-// int reader_already_connected = -1;
-
 // letter positioning variables
 float t = 0;
 long r = 0; // radius
 long xPos = 0;
 long yPos = 0;
-
-// rfid variables
-// int elock = 39;
-
-// byte ssPins[] = {SS_1_PIN, SS_2_PIN, SS_3_PIN, SS_4_PIN, SS_5_PIN};
-// MFRC522 mfrc522[NR_OF_READERS]; // Create MFRC522 instance.
-
-// int bingo = 0;
 
 // decalre functions
 void runSpeedX()
@@ -236,9 +179,6 @@ bool calibrateX()
       }
     }
   }
-
-  // return true;
-  //  when not calibratedX, use runSpeed
 }
 
 bool calibrateY()
@@ -253,8 +193,6 @@ bool calibrateY()
 
       int kontaktYl = digitalRead(kontYlPin);
       int kontaktYr = digitalRead(kontYrPin);
-      // Serial.println("kontYl  " + kontaktYl);
-      // Serial.println("kontYr  " + kontaktYr);
 
       // jedź w jedną
       if (direction == 0)
@@ -321,15 +259,9 @@ bool calibrateY()
   // when not calibratedX, use runSpeed
 }
 
-// when not calibratedY, use runSpeed
-
 // letter positioning
 void charPos(char letter = 'a')
-{ // letter positions
-  // proba literkowa
-  // String txt1 = "siema eniu tu dupa";
-  // for (int i = 0; i <= txt1.length(); i++) {
-  // Serial.println(txt1.charAt(i));
+{
   if (letter != ' ' || letter != '.')
   {
     r = height / 2;
@@ -489,8 +421,6 @@ void charPos(char letter = 'a')
   {
     t = -((6.28319 / 10) * 9);
   }
-
-  // }
 }
 
 // play the sentence
@@ -534,19 +464,6 @@ void playString(String sentence = "bingo")
   }
 }
 
-/**
- * Helper routine to dump a byte array as hex values to Serial.
- */
-// void dump_byte_array(byte *buffer, byte bufferSize)
-// {
-//   Serial.println(buffer[0]);
-//   for (byte i = 0; i < bufferSize; i++)
-//   {
-//     Serial.print(buffer[i] < 0x10 ? " 0" : " ");
-//     Serial.print(buffer[i], HEX);
-//   }
-// }
-
 void calibrate()
 {
   Serial.println("calibration");
@@ -568,88 +485,8 @@ void setup()
   pinMode(kontXbPin, INPUT_PULLUP); // kontatkron Xb
   pinMode(kontYlPin, INPUT_PULLUP); // kontaktron Yl
   pinMode(kontYrPin, INPUT_PULLUP); // kontatkron Yr
-
-  // rfid reader setup
-  // pinMode(elock, OUTPUT);
-  // digitalWrite(elock, LOW);
-
-  // SPI.begin(); // Init SPI bus
-
-  // for (uint8_t reader = 0; reader < NR_OF_READERS; reader++)
-  // {
-  //   mfrc522[reader].PCD_Init(ssPins[reader], RST_PIN); // Init each MFRC522 card
-  //   Serial.print(F("Reader "));
-  //   Serial.print(reader);
-  //   Serial.print(F(": "));
-  //   mfrc522[reader].PCD_DumpVersionToSerial();
-  // }
-
-  // prepare sentences array
-  // TODO delete
-  // txt[0] = txt0;
-  // txt[1] = txt1 + " ";
-  // txt[2] = txt2 + " ";
-  // txt[3] = txt3 + " ";
-  // txt[4] = txt4 + " ";
-  // txt[5] = txt5 + " ";
-  // txt[6] = txt6 + " ";
-  // txt[7] = txt7 + " ";
-  // txt[8] = txt8 + " ";
-  // txt[9] = txt9 + " ";
-
-  // set the calibration switch pin to input
-  // pinMode(calibrationSwitch, INPUT);
-
-  // if (digitalRead(calibrationSwitch) == 0)
-  // { // gnd = 0, 5v = 1
-
-  // calibrate the machine
-
-  // calibrateX();
-  // calibrateY();
-
-  // }
-  // if (digitalRead(calibrationSwitch) == 1)
-  // {
-  //   calibratedX = true;
-  //   calibratedY = true;
-  //   setCurrentPositionX(0);
-  //   y.setCurrentPosition(0);
-  //   Serial.println("skipped");
-  // }
 }
 
-// todo: redo
-// String get_sentence(MFRC522::Uid uid)
-// {
-//   for (int x = 0; x < sizeof(tagarray); x++) // tagarray's row
-//   {
-//     for (int i = 0; i < uid.size; i++) // tagarray's columns
-//     {
-//       if (uid.uidByte[i] == tagarray[x][i]) // Comparing the UID in the buffer to the UID in the tag array.
-//       {
-//         if (i == uid.size - 1)
-//         {
-//           Serial.print("txt[x]: ");
-//           Serial.println(txt[x]);
-//           return txt[x];
-//         }
-//         continue;
-//       }
-//       else
-//       {
-//         break;
-//       }
-//     } // If the Tag is allowed, quit the test.
-//   }
-//   return txt[0];
-// };
-
-// // todo: redo
-// String get_double_sentence(MFRC522::Uid uid_one, MFRC522::Uid uid_two)
-// {
-//   return "baba ";
-// };
 void loop()
 {
   if (Serial1.available())
