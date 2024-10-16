@@ -1,8 +1,8 @@
 
 // #include "Arduino.h"
 #include <AccelStepper.h>
-#include <SPI.h>
-#include <MFRC522.h>
+// #include <SPI.h>
+// #include <MFRC522.h>
 
 /*------RFID READER PIN LAYOUT
 
@@ -19,38 +19,38 @@
 
  */
 
-bool ACCEPT_DOUBLE_TAGS = false; //trus
+// bool ACCEPT_DOUBLE_TAGS = false; //trus
 
-String txt[10];
+// String txt[10];
 
-// texts to display
-String txt1 = "1";
-String txt2 = "2";
-String txt3 = "3";
-String txt4 = "4";
-String txt5 = "5";
-String txt6 = "6";
-String txt7 = "7";
-String txt8 = "8";
-String txt9 = "9";
+// // texts to display
+// String txt1 = "1";
+// String txt2 = "2";
+// String txt3 = "3";
+// String txt4 = "4";
+// String txt5 = "5";
+// String txt6 = "6";
+// String txt7 = "7";
+// String txt8 = "8";
+// String txt9 = "9";
 
-// List of Tags UIDs
-byte tagarray[][4] = {
-    {243, 36, 177, 207},  // Tag A
-    {218, 136, 125, 122}, // Tag B
-    {218, 94, 219, 122},  // Tag C
-    {50, 243, 12, 255},   // Tag D
-    {193, 50, 55, 13},    // Tag E
-    {123, 194, 17, 255},  // Tag F
-    {74, 188, 129, 129},  // Tag G
-    {74, 220, 70, 129},   // Tag H
-    {50, 113, 84, 207}    // Tag I
-};
+// // List of Tags UIDs
+// byte tagarray[][4] = {
+//     {243, 36, 177, 207},  // Tag A
+//     {218, 136, 125, 122}, // Tag B
+//     {218, 94, 219, 122},  // Tag C
+//     {50, 243, 12, 255},   // Tag D
+//     {193, 50, 55, 13},    // Tag E
+//     {123, 194, 17, 255},  // Tag F
+//     {74, 188, 129, 129},  // Tag G
+//     {74, 220, 70, 129},   // Tag H
+//     {50, 113, 84, 207}    // Tag I
+// };
 
-String txt0 = " ";
+// String txt0 = " ";
 
 // calibration switch pin
-//int calibrationSwitch = 31; // gnd = 0, 5v = 1
+// int calibrationSwitch = 31; // gnd = 0, 5v = 1
 
 // pins for rfid
 /*
@@ -58,13 +58,13 @@ SS pins on the shield: 25,26,27,28,29
 default: 53
 */
 
-// 5 RFID PINs
-#define SS_1_PIN 24 // Configurable, take a unused pin, only HIGH/LOW required, must be different to SS 2
-#define SS_2_PIN 25 // Configurable, take a unused pin, only HIGH/LOW required, must be different to SS 1
-#define SS_3_PIN 26 // Configurable, take a unused pin, only HIGH/LOW required, must be different to SS 2
-#define SS_4_PIN 27
-#define SS_5_PIN 28
-#define NR_OF_READERS 5
+// // 5 RFID PINs
+// #define SS_1_PIN 24 // Configurable, take a unused pin, only HIGH/LOW required, must be different to SS 2
+// #define SS_2_PIN 25 // Configurable, take a unused pin, only HIGH/LOW required, must be different to SS 1
+// #define SS_3_PIN 26 // Configurable, take a unused pin, only HIGH/LOW required, must be different to SS 2
+// #define SS_4_PIN 27
+// #define SS_5_PIN 28
+// #define NR_OF_READERS 5
 
 #define RST_PIN 6
 
@@ -95,7 +95,7 @@ long height = 0;
 bool calibratedX = false;
 bool calibratedY = false;
 
-int reader_already_connected = -1;
+// int reader_already_connected = -1;
 
 // letter positioning variables
 float t = 0;
@@ -104,12 +104,12 @@ long xPos = 0;
 long yPos = 0;
 
 // rfid variables
-int elock = 39;
+// int elock = 39;
 
-byte ssPins[] = {SS_1_PIN, SS_2_PIN, SS_3_PIN, SS_4_PIN, SS_5_PIN};
-MFRC522 mfrc522[NR_OF_READERS]; // Create MFRC522 instance.
+// byte ssPins[] = {SS_1_PIN, SS_2_PIN, SS_3_PIN, SS_4_PIN, SS_5_PIN};
+// MFRC522 mfrc522[NR_OF_READERS]; // Create MFRC522 instance.
 
-int bingo = 0;
+// int bingo = 0;
 
 // decalre functions
 void runSpeedX()
@@ -230,24 +230,22 @@ bool calibrateX()
 
       runSpeedToPositionX();
       if (xl.distanceToGo() == 0)
-      { 
-      calibratedX = true;
-      Serial.println("skonczylismy kalibrowanie X");
-      
+      {
+        calibratedX = true;
+        Serial.println("skonczylismy kalibrowanie X");
       }
     }
-   
   }
-  
-//return true;
-  // when not calibratedX, use runSpeed
+
+  // return true;
+  //  when not calibratedX, use runSpeed
 }
 
 bool calibrateY()
 {
   bool done = false;
-Serial.println("zaczynamy y");
-int direction = 0;
+  Serial.println("zaczynamy y");
+  int direction = 0;
   while (!calibratedY)
   {
     if (!done)
@@ -271,7 +269,7 @@ int direction = 0;
         {
           // set 0 position
           y.setCurrentPosition(0);
-Serial.println("y change direction  ");
+          Serial.println("y change direction  ");
           // change direction
           direction = 1;
         }
@@ -307,15 +305,15 @@ Serial.println("y change direction  ");
       y.runSpeed();
     }
     // it is done - return
-        else
+    else
     {
 
       y.runSpeedToPosition();
       if (y.distanceToGo() == 0)
-      { 
-      calibratedY = true;
-      Serial.println("skonczylismy kalibrowanie Y");
-      return true;
+      {
+        calibratedY = true;
+        Serial.println("skonczylismy kalibrowanie Y");
+        return true;
       }
     }
   }
@@ -496,7 +494,7 @@ void charPos(char letter = 'a')
 }
 
 // play the sentence
-void playString(String sentence = txt0)
+void playString(String sentence = "bingo")
 {
   Serial.print("Sentence: ");
   Serial.println(sentence);
@@ -539,24 +537,32 @@ void playString(String sentence = txt0)
 /**
  * Helper routine to dump a byte array as hex values to Serial.
  */
-void dump_byte_array(byte *buffer, byte bufferSize)
+// void dump_byte_array(byte *buffer, byte bufferSize)
+// {
+//   Serial.println(buffer[0]);
+//   for (byte i = 0; i < bufferSize; i++)
+//   {
+//     Serial.print(buffer[i] < 0x10 ? " 0" : " ");
+//     Serial.print(buffer[i], HEX);
+//   }
+// }
+
+void calibrate()
 {
-  Serial.println(buffer[0]);
-  for (byte i = 0; i < bufferSize; i++)
-  {
-    Serial.print(buffer[i] < 0x10 ? " 0" : " ");
-    Serial.print(buffer[i], HEX);
-  }
+  Serial.println("calibration");
+  // Change these to suit your stepper if you want
+  steppersSetup(15000.0, 10000.0, 100000.0); // steppersSetup(maxspeed, speed, accel)
+
+  moveToX(steps);
+
+  calibrateX();
+  calibrateY();
 }
 
 void setup()
 {
   Serial.begin(9600);
-
-  // Change these to suit your stepper if you want
-  steppersSetup(15000.0, 10000.0, 100000.0); // steppersSetup(maxspeed, speed, accel)
-
-  moveToX(steps);
+  Serial1.begin(9600); // the one for ESP
 
   pinMode(kontXtPin, INPUT_PULLUP); // kontaktron Xt
   pinMode(kontXbPin, INPUT_PULLUP); // kontatkron Xb
@@ -564,43 +570,43 @@ void setup()
   pinMode(kontYrPin, INPUT_PULLUP); // kontatkron Yr
 
   // rfid reader setup
-  pinMode(elock, OUTPUT);
-  digitalWrite(elock, LOW);
+  // pinMode(elock, OUTPUT);
+  // digitalWrite(elock, LOW);
 
-  SPI.begin(); // Init SPI bus
+  // SPI.begin(); // Init SPI bus
 
-  for (uint8_t reader = 0; reader < NR_OF_READERS; reader++)
-  {
-    mfrc522[reader].PCD_Init(ssPins[reader], RST_PIN); // Init each MFRC522 card
-    Serial.print(F("Reader "));
-    Serial.print(reader);
-    Serial.print(F(": "));
-    mfrc522[reader].PCD_DumpVersionToSerial();
-  }
+  // for (uint8_t reader = 0; reader < NR_OF_READERS; reader++)
+  // {
+  //   mfrc522[reader].PCD_Init(ssPins[reader], RST_PIN); // Init each MFRC522 card
+  //   Serial.print(F("Reader "));
+  //   Serial.print(reader);
+  //   Serial.print(F(": "));
+  //   mfrc522[reader].PCD_DumpVersionToSerial();
+  // }
 
   // prepare sentences array
-  txt[0] = txt0;
-  txt[1] = txt1 + " ";
-  txt[2] = txt2 + " ";
-  txt[3] = txt3 + " ";
-  txt[4] = txt4 + " ";
-  txt[5] = txt5 + " ";
-  txt[6] = txt6 + " ";
-  txt[7] = txt7 + " ";
-  txt[8] = txt8 + " ";
-  txt[9] = txt9 + " ";
+  // TODO delete
+  // txt[0] = txt0;
+  // txt[1] = txt1 + " ";
+  // txt[2] = txt2 + " ";
+  // txt[3] = txt3 + " ";
+  // txt[4] = txt4 + " ";
+  // txt[5] = txt5 + " ";
+  // txt[6] = txt6 + " ";
+  // txt[7] = txt7 + " ";
+  // txt[8] = txt8 + " ";
+  // txt[9] = txt9 + " ";
 
   // set the calibration switch pin to input
-  //pinMode(calibrationSwitch, INPUT);
+  // pinMode(calibrationSwitch, INPUT);
 
   // if (digitalRead(calibrationSwitch) == 0)
   // { // gnd = 0, 5v = 1
 
-    // calibrate the machine
-    Serial.println("calibration");
+  // calibrate the machine
 
-    calibrateX();
-    calibrateY();
+  // calibrateX();
+  // calibrateY();
 
   // }
   // if (digitalRead(calibrationSwitch) == 1)
@@ -613,85 +619,58 @@ void setup()
   // }
 }
 
-String get_sentence(MFRC522::Uid uid)
-{
-  for (int x = 0; x < sizeof(tagarray); x++) // tagarray's row
-  {
-    for (int i = 0; i < uid.size; i++) // tagarray's columns
-    {
-      if (uid.uidByte[i] == tagarray[x][i]) // Comparing the UID in the buffer to the UID in the tag array.
-      {
-        if (i == uid.size - 1)
-        {
-          Serial.print("txt[x]: ");
-          Serial.println(txt[x]);
-          return txt[x];
-        }
-        continue;
-      }
-      else
-      {
-        break;
-      }
-    } // If the Tag is allowed, quit the test.
-  }
-  return txt[0];
-};
+// todo: redo
+// String get_sentence(MFRC522::Uid uid)
+// {
+//   for (int x = 0; x < sizeof(tagarray); x++) // tagarray's row
+//   {
+//     for (int i = 0; i < uid.size; i++) // tagarray's columns
+//     {
+//       if (uid.uidByte[i] == tagarray[x][i]) // Comparing the UID in the buffer to the UID in the tag array.
+//       {
+//         if (i == uid.size - 1)
+//         {
+//           Serial.print("txt[x]: ");
+//           Serial.println(txt[x]);
+//           return txt[x];
+//         }
+//         continue;
+//       }
+//       else
+//       {
+//         break;
+//       }
+//     } // If the Tag is allowed, quit the test.
+//   }
+//   return txt[0];
+// };
 
-String get_double_sentence(MFRC522::Uid uid_one, MFRC522::Uid uid_two)
-{
-  return "baba ";
-};
+// // todo: redo
+// String get_double_sentence(MFRC522::Uid uid_one, MFRC522::Uid uid_two)
+// {
+//   return "baba ";
+// };
 void loop()
 {
-  // stolen from https://github.com/Annaane/MultiRfid/blob/master/FourRFID.ino
-
-  /**
-   * 1. iterate over readers
-   */
-  for (uint8_t reader = 0; reader < NR_OF_READERS; reader++)
+  if (Serial1.available())
   {
-    /**
-     * 2. if theres something, iterate over a) tagarray b) its row, comparing with given id
-     */
-    if (mfrc522[reader].PICC_IsNewCardPresent() && mfrc522[reader].PICC_ReadCardSerial())
+    String message = Serial1.readStringUntil('\n'); // Read the entire command
+    Serial.println("Received message: " + message); // Print for debugging
+
+    // Split the message into command and argument (command:argument)
+    int delimiterIndex = message.indexOf(':');               // Find the ':' delimiter
+    String command = message.substring(0, delimiterIndex);   // Extract the command
+    String argument = message.substring(delimiterIndex + 1); // Extract the argument (if any)
+
+    // Parse the argument as an integer (for motor speed)
+    // Handle the command
+    if (command == "calibrate")
     {
-      Serial.print(F("Reader "));
-      Serial.print(reader);
-
-      // Show some details of the PICC (that is: the tag/card)
-      Serial.print(F(": Card UID:"));
-      dump_byte_array(mfrc522[reader].uid.uidByte, mfrc522[reader].uid.size);
-
-      reader_already_connected = reader;
-
-      if (!ACCEPT_DOUBLE_TAGS)
-      {
-        String sentence = get_sentence(mfrc522[reader].uid); // sentences for one card
-        Serial.print("single sentence: ");
-        Serial.println(sentence);
-        playString(sentence);
-      }
-      else
-      {
-        for (uint8_t second_reader = 0; second_reader < NR_OF_READERS; second_reader++)
-        {
-          if (mfrc522[second_reader].PICC_IsNewCardPresent() && mfrc522[second_reader].PICC_ReadCardSerial() && reader != second_reader)
-          {
-            String sentence = get_double_sentence(mfrc522[reader].uid, mfrc522[second_reader].uid);
-            Serial.print("double sentence: ");
-            Serial.println(sentence);
-            playString(sentence);
-          }
-          mfrc522[second_reader].PICC_HaltA();
-          mfrc522[second_reader].PCD_StopCrypto1();
-        }
-      }
-      // String sentence = get_sentence(mfrc522[reader].uid); //sentences for one card
+      calibrate(); // Pass the argument (e.g., speed) to the function
     }
-
-    mfrc522[reader].PICC_HaltA();
-    // // Stop encryption on PCD
-    mfrc522[reader].PCD_StopCrypto1();
+    else if (command == "write")
+    {
+      playString(argument); // No argument needed for stopping
+    }
   }
 }
