@@ -1,4 +1,3 @@
-
 // #include "Arduino.h"
 #include <AccelStepper.h>
 // #include <SPI.h>
@@ -436,12 +435,12 @@ void playString(String sentence = "bingo")
       // Serial.println(i);
       if (i == sentence.length() && xl.distanceToGo() == 0 && y.distanceToGo() == 0)
       {
-        Serial.print("dojechali >> ");
-        Serial.print("bingo :");
-        Serial.println(bingo);
-        bingo = 0;
+        // Serial.print("dojechali >> ");
+        // Serial.print("bingo :");
+        // Serial.println(bingo);
+        // bingo = 0;
 
-        Serial.println("dojechali 22");
+        Serial1.println("dojechali 22");
         break;
       }
       if (xl.distanceToGo() == 0 && y.distanceToGo() == 0)
@@ -489,9 +488,25 @@ void setup()
 
 void loop()
 {
+
+  if (Serial.available())
+  {
+    String message = Serial.readString();
+    message.trim(); // Remove any whitespace or newlines
+
+    // Echo back what was received
+    // Serial.print("Received: ");
+    // Serial.println(message);
+    Serial1.println(message);
+    delay(1000);
+    Serial.println(message);
+    // Blink LED 3 times
+  }
+
   if (Serial1.available())
   {
-    String message = Serial1.readStringUntil('\n'); // Read the entire command
+    String message = Serial1.readString(); // Read the entire command
+    message.trim();
     Serial.println("Received message: " + message); // Print for debugging
 
     // Split the message into command and argument (command:argument)
@@ -501,12 +516,13 @@ void loop()
 
     // Parse the argument as an integer (for motor speed)
     // Handle the command
-    if (command == "calibrate")
+    if (command == String("calibrate"))
     {
       calibrate(); // Pass the argument (e.g., speed) to the function
     }
     else if (command == "write")
     {
+      Serial1.println(command + " : " + argument);
       playString(argument); // No argument needed for stopping
     }
   }
