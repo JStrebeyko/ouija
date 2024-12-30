@@ -18,9 +18,9 @@ void blinkLED(int times)
   for (int i = 0; i < times; i++)
   {
     digitalWrite(LED_BUILTIN, LOW); // LED ON
-    delay(200);
+    delay(50);
     digitalWrite(LED_BUILTIN, HIGH); // LED OFF
-    delay(200);
+    delay(50);
   }
 }
 
@@ -35,13 +35,13 @@ void loop()
     // Echo back what was received
     // Serial.print("Received: ");
     // Serial.println(message);
-    softSerial.println("write:" + message);
+    softSerial.println(message);
     // Blink LED 3 times
-    blinkLED(2);
+    blinkLED(1);
   }
   if (softSerial.available())
   {
-    blinkLED(5);
+    blinkLED(2);
     String message = softSerial.readString();
     message.trim(); // Remove any whitespace or newlines
 
