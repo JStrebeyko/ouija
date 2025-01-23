@@ -583,8 +583,8 @@ void handleMove(String params) {
   String xString = params.substring(0, spaceIndex);
   String yString = params.substring(spaceIndex + 1);
 
-  int xCoord = xString.toInt();
-  int yCoord = yString.toInt();
+  long xCoord = map(xString.toInt(),0,50,0,width); //map values from 0,50 to the actual ones
+  long yCoord = map(yString.toInt(),0,50,0,width);
 
   // Tutaj dodaj kod obsługujący ruch do pozycji (x, y)
   Serial1.println("OK");
@@ -595,8 +595,8 @@ void handleMove(String params) {
 
   if (xl.distanceToGo() == 0 && y.distanceToGo() == 0)
       {
-        moveToX(yCoord);
-        y.moveTo(xCoord);
+        moveToX(xCoord);
+        y.moveTo(yCoord);
 
         runSpeedToPositionX();
         y.runSpeedToPosition();
