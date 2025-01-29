@@ -32,6 +32,8 @@ AccelStepper xl = AccelStepper(motorInterfaceType, stepPin, dirPin);
 AccelStepper xr = AccelStepper(motorInterfaceType, step2Pin, dir2Pin);
 AccelStepper y = AccelStepper(motorInterfaceType, step3Pin, dir3Pin);
 
+boolean isStopped = false;
+
 // set contactrons pins
 int kontXtPin = 2;
 int kontXbPin = 3;
@@ -53,7 +55,7 @@ long r = 0; // radius
 long xPos = 0;
 long yPos = 0;
 
-//declare speed
+// declare speed
 float gSpeed = 10000.0;
 
 // decalre functions
@@ -114,7 +116,7 @@ bool calibrateX()
 
   int direction = 1;
   bool done = false;
-  Serial1.println("calibrating x..."); 
+  Serial1.println("calibrating x...");
   while (!calibratedX)
   {
     if (!done)
@@ -209,8 +211,8 @@ bool calibrateY()
         {
           // set 0 position
           y.setCurrentPosition(0);
-          //Serial1.println("y change direction  ");
-          // change direction
+          // Serial1.println("y change direction  ");
+          //  change direction
           direction = 1;
         }
       }
@@ -434,22 +436,15 @@ void playString(String sentence = " ")
   { // go to next letter
 
     for (int i = 0; i <= sentence.length();)
-    {
-      // Serial1.println(i);
+    { // FINISHED
       if (i == sentence.length() && xl.distanceToGo() == 0 && y.distanceToGo() == 0)
       {
-        // Serial1.print("dojechali >> ");
-        // Serial1.print("bingo :");
-        // Serial1.println(bingo);
-        // bingo = 0;
-
         Serial1.println("done displaying");
         break;
       }
+
       if (xl.distanceToGo() == 0 && y.distanceToGo() == 0)
       {
-
-        delay(2000);
 
         charPos(sentence.charAt(i));      // set t value
         xPos = r * cos(t) + (width / 2);  // calculate position of letters in a circle x = r*cos(t) + h, y = r*sin(t) + w , where h and w are the coordinates of the circle center
@@ -460,8 +455,22 @@ void playString(String sentence = " ")
 
         i++;
       }
-      runSpeedToPositionX();
-      y.runSpeedToPosition();
+      if (Serial1.available())
+      {
+        String message = Serial1.readString(); // Read the entire command
+        message.trim();
+        if (message == String("STOP"))
+        {
+          Serial1.println("stawaj pizdo");
+          moveToX(xl.currentPosition());
+          y.moveTo(y.currentPosition());
+          runSpeedToPositionX();
+          y.runSpeedToPosition();
+          return;
+        }
+      }
+        runSpeedToPositionX();
+        y.runSpeedToPosition();
     }
   }
 }
@@ -471,7 +480,7 @@ void calibrate()
   Serial1.println("calibrating...");
   // Change these to suit your stepper if you want
   // gSpeed=10000.0;
-  steppersSetup(15000.0, 10000.0, 100000.0); // steppersSetup(maxspeed, speed, accel)
+  steppersSetup(2500000.0, 2000000.0, 10000000.0); // steppersSetup(maxspeed, speed, accel) default: (15000.0, 10000.0, 100000.0)
 
   moveToX(steps);
 
@@ -521,7 +530,6 @@ void loop()
     if (command == String("DISPLAY"))
     {
       handleDisplay(argument); // No argument needed for stopping
-      
     }
     else if (command == String("HOME"))
     {
@@ -535,28 +543,37 @@ void loop()
     {
       handleSetSpeed(argument);
     }
-       else if (command == String("GET_SPEED"))
+    else if (command == String("GET_SPEED"))
     {
       handleGetSpeed();
     }
-       else if (command == String("CALIBRATE"))
+    else if (command == String("CALIBRATE"))
     {
       calibrate();
     }
-      else if (command == String("ECHO"))
+    else if (command == String("ECHO"))
     {
       handleEcho(argument);
     }
-       else if (command == String("VERSION"))
+    else if (command == String("VERSION"))
     {
       handleVersion();
+    }
+    else if (command == String("STOP"))
+    {
+      handleStop();
+    }
+    else if (command == String("RESUME"))
+    {
+      handleResume();
     }
   }
 }
 
-
-void handleDisplay(String params) {
-  if (params.length() == 0) {
+void handleDisplay(String params)
+{
+  if (params.length() == 0)
+  {
     Serial1.println("ERROR: nothing to display");
     return;
   }
@@ -567,24 +584,27 @@ void handleDisplay(String params) {
   playString(params);
 }
 
-void handleHome() {
+void handleHome()
+{
   // Tutaj dodaj kod obsługujący powrót do pozycji domowej
   Serial1.println("OK");
   Serial1.println("Homing sequence initiated");
-  playString(" "); //spacja jest na środku
+  playString(" "); // spacja jest na środku
 }
 
-void handleMove(String params) {
+void handleMove(String params)
+{
   int spaceIndex = params.indexOf(' ');
-  if (spaceIndex == -1) {
+  if (spaceIndex == -1)
+  {
     Serial1.println("ERROR: Invalid parameters");
     return;
   }
   String xString = params.substring(0, spaceIndex);
   String yString = params.substring(spaceIndex + 1);
 
-  long xCoord = map(xString.toInt(),0,50,0,width); //map values from 0,50 to the actual ones
-  long yCoord = map(yString.toInt(),0,50,0,width);
+  long xCoord = map(xString.toInt(), 0, 50, 0, width); // map values from 0,50 to the actual ones
+  long yCoord = map(yString.toInt(), 0, 50, 0, width);
 
   // Tutaj dodaj kod obsługujący ruch do pozycji (x, y)
   Serial1.println("OK");
@@ -594,19 +614,21 @@ void handleMove(String params) {
   Serial1.println(yCoord);
 
   if (xl.distanceToGo() == 0 && y.distanceToGo() == 0)
-      {
-        moveToX(xCoord);
-        y.moveTo(yCoord);
+  {
+    moveToX(xCoord);
+    y.moveTo(yCoord);
 
-        runSpeedToPositionX();
-        y.runSpeedToPosition();
-      }
-  Serial1.println("Done moving");    
+    runSpeedToPositionX();
+    y.runSpeedToPosition();
+  }
+  Serial1.println("Done moving");
 }
 
-void handleSetSpeed(String params) {
+void handleSetSpeed(String params)
+{
   float newSpeed = params.toFloat();
-  if (newSpeed <= 0.0 || newSpeed > 100.0) {
+  if (newSpeed <= 0.0 || newSpeed > 100.0)
+  {
     Serial1.println("ERROR: Invalid speed value. It must be between 0.0 and 100.0");
     return;
   }
@@ -615,28 +637,42 @@ void handleSetSpeed(String params) {
   Serial1.print("Speed set to ");
   Serial1.println(newSpeed);
 
-  gSpeed=map(newSpeed,0.0,100.0,0.0,15000.0);
+  gSpeed = map(newSpeed, 0.0, 100.0, 0.0, 15000.0);
   steppersSetup(15000.0, gSpeed, 100000.0); // steppersSetup(maxspeed, speed, accel)
-
 }
 
-void handleGetSpeed() {
+void handleGetSpeed()
+{
   Serial1.print("SPEED ");
-  Serial1.println(map(gSpeed,0.0,15000.0,0.0,100));
+  Serial1.println(map(gSpeed, 0.0, 15000.0, 0.0, 100));
 }
 
-void handleCalibrate() {
+void handleCalibrate()
+{
   // Tutaj dodaj kod obsługujący kalibrację maszyny
   Serial1.println("OK");
   Serial1.println("Calibration started");
   calibrate();
 }
 
-void handleEcho(String params) {
+void handleEcho(String params)
+{
   Serial1.print("ECHO ");
   Serial1.println(params);
 }
 
-void handleVersion() {
+void handleVersion()
+{
   Serial1.println("VERSION 0.9.0");
+}
+
+void handleStop()
+{
+  Serial1.print("Stopping...");
+  isStopped = true;
+}
+void handleResume()
+{
+  Serial1.print("Resuming...");
+  isStopped = false;
 }
