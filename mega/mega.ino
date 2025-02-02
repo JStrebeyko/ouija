@@ -44,8 +44,8 @@ int kontYrPin = 5;
 long steps = 5000;
 // int direction = 1;
 // int directionY = 1;
-long width = 0;
-long height = 0;
+long width = -44852;
+long height = -38111;
 bool calibratedX = false;
 bool calibratedY = false;
 
@@ -165,8 +165,8 @@ bool calibrateX()
 
           done = true;
           moveToX(width / 2);
-          // Serial1.print("calibratedX: width = ");
-          // Serial1.println(width);
+          Serial1.print("calibratedX: width = ");
+          Serial1.println(width);
         }
       }
       runSpeedX();
@@ -239,8 +239,8 @@ bool calibrateY()
 
           done = true;
           y.moveTo(height / 2);
-          // Serial1.print("calibratedY = ");
-          // Serial1.println(height);
+          Serial1.print("calibratedY = ");
+          Serial1.println(height);
           continue;
         }
       }
@@ -254,6 +254,8 @@ bool calibrateY()
       if (y.distanceToGo() == 0)
       {
         calibratedY = true;
+     
+
         Serial1.println("Y calibrated");
         return true;
       }
@@ -455,13 +457,13 @@ void playString(String sentence = " ")
 
         i++;
       }
-      if (Serial1.available())
+      if (Serial1.available() || digitalRead(kontYlPin) == 1 || digitalRead(kontYrPin) == 1 || digitalRead(kontXtPin) == 1 || digitalRead(kontXbPin) == 1)
       {
         String message = Serial1.readString(); // Read the entire command
         message.trim();
         if (message == String("STOP"))
         {
-          Serial1.println("stawaj pizdo");
+          Serial1.println("stopped");
           moveToX(xl.currentPosition());
           y.moveTo(y.currentPosition());
           runSpeedToPositionX();
@@ -469,8 +471,8 @@ void playString(String sentence = " ")
           return;
         }
       }
-        runSpeedToPositionX();
-        y.runSpeedToPosition();
+      runSpeedToPositionX();
+      y.runSpeedToPosition();
     }
   }
 }
@@ -480,13 +482,13 @@ void calibrate()
   Serial1.println("calibrating...");
   // Change these to suit your stepper if you want
   // gSpeed=10000.0;
-  steppersSetup(2500000.0, 2000000.0, 10000000.0); // steppersSetup(maxspeed, speed, accel) default: (15000.0, 10000.0, 100000.0)
-
+  steppersSetup(15000.0, 10000.0, 100000.0); // steppersSetup(maxspeed, speed, accel) default: (15000.0, 10000.0, 100000.0)
+  width = 0;
+  height = 0;
   moveToX(steps);
 
   calibrateX();
   calibrateY();
-  Serial1.println("calibration finished");
 }
 
 void setup()
@@ -562,10 +564,6 @@ void loop()
     else if (command == String("STOP"))
     {
       handleStop();
-    }
-    else if (command == String("RESUME"))
-    {
-      handleResume();
     }
   }
 }
@@ -671,8 +669,4 @@ void handleStop()
   Serial1.print("Stopping...");
   isStopped = true;
 }
-void handleResume()
-{
-  Serial1.print("Resuming...");
-  isStopped = false;
-}
+
