@@ -1,22 +1,4 @@
-// #include "Arduino.h"
 #include <AccelStepper.h>
-// #include <SPI.h>
-// #include <MFRC522.h>
-
-/*------RFID READER PIN LAYOUT
-
- * Pin layout should be as follows:
- * Signal     Pin              Pin               Pin
- *            Arduino Uno      Arduino Mega      MFRC522 board
- * ------------------------------------------------------------
- * Reset      9                6                 RST
- * SPI SS     10               53                SDA
- * SPI MOSI   11               51                MOSI
- * SPI MISO   12               50                MISO
- * SPI SCK    13               52                SCK
- * voltage 3.3v
-
- */
 
 #define RST_PIN 6
 
@@ -27,6 +9,7 @@
 #define dir3Pin 12   // pins for y motor
 #define step3Pin 13  // pins for y motor
 #define motorInterfaceType 1
+
 // Define a stepper and the pins it will use
 AccelStepper xl = AccelStepper(motorInterfaceType, stepPin, dirPin);
 AccelStepper xr = AccelStepper(motorInterfaceType, step2Pin, dir2Pin);
@@ -41,9 +24,7 @@ int kontYlPin = 4;
 int kontYrPin = 5;
 
 // stepper settings
-long steps = 10000; //default 5000
-// int direction = 1;
-// int directionY = 1;
+long steps = 10000;  //default 5000
 long width = 0;
 long height = 0;
 bool calibratedX = false;
@@ -58,7 +39,39 @@ long yPos = 0;
 // declare speed
 float gSpeed = 10000.0;
 
-// decalre functions
+// Define structures for character positions
+struct Position {
+  int x;  // X coordinate (0-50)
+  int y;  // Y coordinate (0-50)
+};
+
+#define NUM_LETTERS 26
+#define NUM_NUMBERS 10
+
+// Arrays to store x,y positions for each character
+Position letterPositions[NUM_LETTERS];  // A-Z
+Position numberPositions[NUM_NUMBERS];  // 0-9
+
+// Initialize default positions in a circle
+void initializeDefaultPositions() {
+  // Calculate default positions for letters (larger circle)
+  for (int i = 0; i < NUM_LETTERS; i++) {
+    float angle = -((6.28319 / 26) * i);
+    // Convert from polar to cartesian coordinates and map to 0-50 range
+    letterPositions[i].x = 25 + round(25 * cos(angle));
+    letterPositions[i].y = 25 + round(25 * sin(angle));
+  }
+
+  // Calculate default positions for numbers (smaller circle)
+  for (int i = 0; i < NUM_NUMBERS; i++) {
+    float angle = -((6.28319 / 10) * i);
+    // Use smaller radius for numbers
+    numberPositions[i].x = 25 + round(15 * cos(angle));
+    numberPositions[i].y = 25 + round(15 * sin(angle));
+  }
+}
+
+// declare functions
 void runSpeedX() {
   xl.runSpeed();
   xr.runSpeed();
@@ -103,60 +116,34 @@ void steppersSetup(float maxSpeed, float speed, float accel) {
   y.setAcceleration(accel);
 }
 
-// calibration functions
 bool calibrateX() {
-
   int direction = 1;
   bool done = false;
   Serial1.println("calibrating x...");
   while (!calibratedX) {
     if (!done) {
-
       int kontaktXt = digitalRead(kontXtPin);
       int kontaktXb = digitalRead(kontXbPin);
-      // jedź w jedną
       if (direction == 1) {
-        // kontaktorn 1 nie wykrywa nic, jedziemy
         if (kontaktXt == 1) {
           moveX(steps);
-          // kontaktron 1 zlapal - zeruj pozycje i zawroc
         } else {
-          // set 0 position
           setCurrentPositionX(0);
-
-          // change direction
           direction = 0;
         }
-      }
-
-      else {
-        // jedziemy w druga strone
+      } else {
         if (kontaktXb == 1) {
           moveX(-steps);
-        }
-        // dojechalismy na drugi koniec
-        else {
-
-          // zatrzymaj
+        } else {
           stopX();
-
-          // set width
           width = xl.currentPosition();
           delay(1000);
-
-          // pojedzmy teraz na srodek
-
           done = true;
           moveToX(width / 2);
-          // Serial1.print("calibratedX: width = ");
-          // Serial1.println(width);
         }
       }
       runSpeedX();
-    }
-    // it is done - return
-    else {
-
+    } else {
       runSpeedToPositionX();
       if (xl.distanceToGo() == 0) {
         calibratedX = true;
@@ -172,54 +159,30 @@ bool calibrateY() {
   int direction = 0;
   while (!calibratedY) {
     if (!done) {
-
       int kontaktYl = digitalRead(kontYlPin);
       int kontaktYr = digitalRead(kontYrPin);
 
-      // jedź w jedną
       if (direction == 0) {
-        // kontaktorn 1 nie wykrywa nic, jedziemy
         if (kontaktYl == 1) {
           y.move(steps);
-          // kontaktron 1 zlapal - zeruj pozycje i zawroc
         } else {
-          // set 0 position
           y.setCurrentPosition(0);
-          // Serial1.println("y change direction  ");
-          //  change direction
           direction = 1;
         }
-      }
-
-      else {
-        // jedziemy w druga strone
+      } else {
         if (kontaktYr == 1) {
           y.move(-steps);
-        }
-        // dojechalismy na drugi koniec
-        else {
-
-          // zatrzymaj
+        } else {
           y.stop();
-
-          // set width
           height = y.currentPosition();
           delay(1000);
-
-          // pojedzmy teraz na srodek
-
           done = true;
           y.moveTo(height / 2);
-          // Serial1.print("calibratedY = ");
-          // Serial1.println(height);
           continue;
         }
       }
       y.runSpeed();
-    }
-    // it is done - return
-    else {
-
+    } else {
       y.runSpeedToPosition();
       if (y.distanceToGo() == 0) {
         calibratedY = true;
@@ -228,162 +191,54 @@ bool calibrateY() {
       }
     }
   }
-
-  // when not calibratedX, use runSpeed
 }
 
-// letter positioning
 void charPos(char letter = 'a') {
-  if (letter != ' ' || letter != '.') {
-    r = height / 2;
-    if (letter == '1' || letter == '2' || letter == '3' || letter == '4' || letter == '5' || letter == '6' || letter == '7' || letter == '8' || letter == '9' || letter == '0') {
-      r = height / 3.5;
+  if (letter == ' ' || letter == '.') {
+    // Center position
+    xPos = width / 2;
+    yPos = height / 2;
+    return;
+  }
+
+  Position pos;
+  if (isAlpha(letter)) {
+    int index = toupper(letter) - 'A';
+    if (index >= 0 && index < NUM_LETTERS) {
+      pos = letterPositions[index];
+    }
+  } else if (isDigit(letter)) {
+    int index = letter - '0';
+    if (index >= 0 && index < NUM_NUMBERS) {
+      pos = numberPositions[index];
     }
   }
-  if (letter == ' ' || letter == '.') {
-    // t = -((6.28319 / 26) * 25);
-    r = 0;
-  }
 
-  if (letter == 'A' || letter == 'a') {
-    t = -((6.28319 / 26) * 0);
-  }
-  if (letter == 'B' || letter == 'b') {
-    t = -((6.28319 / 26) * 1);
-  }
-  if (letter == 'C' || letter == 'c') {
-    t = -((6.28319 / 26) * 2);
-  }
-  if (letter == 'D' || letter == 'd') {
-    t = -((6.28319 / 26) * 3);
-  }
-  if (letter == 'E' || letter == 'e') {
-    t = -((6.28319 / 26) * 4);
-  }
-  if (letter == 'F' || letter == 'f') {
-    t = -((6.28319 / 26) * 5);
-  }
-  if (letter == 'G' || letter == 'g') {
-    t = -((6.28319 / 26) * 6);
-  }
-  if (letter == 'H' || letter == 'h') {
-    t = -((6.28319 / 26) * 7);
-  }
-  if (letter == 'I' || letter == 'i') {
-    t = -((6.28319 / 26) * 8);
-  }
-  if (letter == 'J' || letter == 'j') {
-    t = -((6.28319 / 26) * 9);
-  }
-  if (letter == 'K' || letter == 'k') {
-    t = -((6.28319 / 26) * 10);
-  }
-  if (letter == 'L' || letter == 'l') {
-    t = -((6.28319 / 26) * 11);
-  }
-  if (letter == 'M' || letter == 'm') {
-    t = -((6.28319 / 26) * 12);
-  }
-  if (letter == 'N' || letter == 'n') {
-    t = -((6.28319 / 26) * 13);
-  }
-  if (letter == 'O' || letter == 'o') {
-    t = -((6.28319 / 26) * 14);
-  }
-  if (letter == 'P' || letter == 'p') {
-    t = -((6.28319 / 26) * 15);
-  }
-  if (letter == 'Q' || letter == 'q') {
-    t = -((6.28319 / 26) * 16);
-  }
-  if (letter == 'R' || letter == 'r') {
-    t = -((6.28319 / 26) * 17);
-  }
-  if (letter == 'S' || letter == 's') {
-    t = -((6.28319 / 26) * 18);
-  }
-  if (letter == 'T' || letter == 't') {
-    t = -((6.28319 / 26) * 19);
-  }
-  if (letter == 'U' || letter == 'u') {
-    t = -((6.28319 / 26) * 20);
-  }
-  if (letter == 'V' || letter == 'v') {
-    t = -((6.28319 / 26) * 21);
-  }
-  if (letter == 'W' || letter == 'w') {
-    t = -((6.28319 / 26) * 22);
-  }
-  if (letter == 'X' || letter == 'x') {
-    t = -((6.28319 / 26) * 23);
-  }
-  if (letter == 'Y' || letter == 'y') {
-    t = -((6.28319 / 26) * 24);
-  }
-  if (letter == 'Z' || letter == 'z') {
-    t = -((6.28319 / 26) * 25);
-  }
-
-  if (letter == '0') {
-    t = -((6.28319 / 10) * 0);
-  }
-  if (letter == '1') {
-    t = -((6.28319 / 10) * 1);
-  }
-  if (letter == '2') {
-    t = -((6.28319 / 10) * 2);
-  }
-  if (letter == '3') {
-    t = -((6.28319 / 10) * 3);
-  }
-  if (letter == '4') {
-    t = -((6.28319 / 10) * 4);
-  }
-  if (letter == '5') {
-    t = -((6.28319 / 10) * 5);
-  }
-  if (letter == '6') {
-    t = -((6.28319 / 10) * 6);
-  }
-  if (letter == '7') {
-    t = -((6.28319 / 10) * 7);
-  }
-  if (letter == '8') {
-    t = -((6.28319 / 10) * 8);
-  }
-  if (letter == '9') {
-    t = -((6.28319 / 10) * 9);
-  }
+  // Map the 0-50 position to actual width/height
+  xPos = map(pos.x, 0, 50, 0, width);
+  yPos = map(pos.y, 0, 50, 0, height);
 }
 
-// play the sentence
 void playString(String sentence = " ") {
-  // Serial1.print("Sentence: ");
-  // Serial1.println(sentence);
-  if (xl.distanceToGo() == 0 && y.distanceToGo() == 0) {  // go to next letter
-
-    for (int i = 0; i <= sentence.length();) {  // FINISHED
+  if (xl.distanceToGo() == 0 && y.distanceToGo() == 0) {
+    for (int i = 0; i <= sentence.length();) {
       if (i == sentence.length() && xl.distanceToGo() == 0 && y.distanceToGo() == 0) {
         Serial1.println("done displaying");
         break;
       }
 
       if (xl.distanceToGo() == 0 && y.distanceToGo() == 0) {
-
-        charPos(sentence.charAt(i));       // set t value
-        xPos = r * cos(t) + (width / 2);   // calculate position of letters in a circle x = r*cos(t) + h, y = r*sin(t) + w , where h and w are the coordinates of the circle center
-        yPos = r * sin(t) + (height / 2);  // r = height/2 for big circle (letters), r = height/3 for small circle (numbers)
-
+        charPos(sentence.charAt(i));
         moveToX(xPos);
         y.moveTo(yPos);
-
         i++;
       }
+      
       if (Serial1.available()) {
-        String message = Serial1.readString();  // Read the entire command
+        String message = Serial1.readString();
         message.trim();
         if (message == String("STOP")) {
-          Serial1.println("stawaj pizdo");
+          Serial1.println("Movement stopped");
           moveToX(xl.currentPosition());
           y.moveTo(y.currentPosition());
           runSpeedToPositionX();
@@ -399,9 +254,7 @@ void playString(String sentence = " ") {
 
 void calibrate() {
   Serial1.println("calibrating...");
-  // Change these to suit your stepper if you want
-  // gSpeed=10000.0;
-  steppersSetup(15000.0, 10000.0, 100000.0);  // steppersSetup(maxspeed, speed, accel) default: (15000.0, 10000.0, 100000.0)
+  steppersSetup(15000.0, 10000.0, 100000.0);
 
   moveToX(steps);
   calibratedX = false;
@@ -411,22 +264,12 @@ void calibrate() {
   Serial1.println("calibration finished");
 }
 
-void setup() {
-  Serial1.begin(9600);
-  //Serial1.begin(9600); // the one for ESP
-
-  pinMode(kontXtPin, INPUT_PULLUP);  // kontaktron Xt
-  pinMode(kontXbPin, INPUT_PULLUP);  // kontatkron Xb
-  pinMode(kontYlPin, INPUT_PULLUP);  // kontaktron Yl
-  pinMode(kontYrPin, INPUT_PULLUP);  // kontatkron Yr
-}
-
+// Command handlers
 void handleDisplay(String params) {
   if (params.length() == 0) {
     Serial1.println("ERROR: nothing to display");
     return;
   }
-  // Tutaj dodaj kod obsługujący wyświetlanie tekstu
   Serial1.println("OK");
   Serial1.print("Displaying: ");
   Serial1.println(params);
@@ -434,10 +277,9 @@ void handleDisplay(String params) {
 }
 
 void handleHome() {
-  // Tutaj dodaj kod obsługujący powrót do pozycji domowej
   Serial1.println("OK");
   Serial1.println("Homing sequence initiated");
-  playString(" ");  // spacja jest na środku
+  playString(" ");
 }
 
 void handleMove(String params) {
@@ -449,7 +291,7 @@ void handleMove(String params) {
   String xString = params.substring(0, spaceIndex);
   String yString = params.substring(spaceIndex + 1);
 
-  long xCoord = map(xString.toInt(), 0, 50, 0, width);  // map values from 0,50 to the actual ones
+  long xCoord = map(xString.toInt(), 0, 50, 0, width);
   long yCoord = map(yString.toInt(), 0, 50, 0, height);
 
   Serial1.println("OK");
@@ -458,13 +300,10 @@ void handleMove(String params) {
   Serial1.print(", Y: ");
   Serial1.println(yCoord);
 
-  // Set target positions
   moveToX(xCoord);
   y.moveTo(yCoord);
 
-  // Keep running until both motors reach their positions
   while (xl.distanceToGo() != 0 || xr.distanceToGo() != 0 || y.distanceToGo() != 0) {
-    // Check for STOP command
     if (Serial1.available()) {
       String message = Serial1.readString();
       message.trim();
@@ -473,7 +312,6 @@ void handleMove(String params) {
         return;
       }
     }
-    
     runSpeedToPositionX();
     y.runSpeedToPosition();
   }
@@ -487,25 +325,82 @@ void handleSetSpeed(String params) {
     Serial1.println("ERROR: Invalid speed value. It must be between 0.0 and 100.0");
     return;
   }
-  // speed = newSpeed;
   Serial1.println("OK");
   Serial1.print("Speed set to ");
   Serial1.println(newSpeed);
 
-  gSpeed = map(newSpeed, 0.0, 100.0, 0.0, 15000.0);
-  steppersSetup(15000.0, gSpeed, 100000.0);  // steppersSetup(maxspeed, speed, accel)
+  gSpeed = map(newSpeed, 0, 100, 0, 15000);
+  steppersSetup(15000.0, gSpeed, 100000.0);
 }
 
 void handleGetSpeed() {
   Serial1.print("SPEED ");
-  Serial1.println(map(gSpeed, 0.0, 15000.0, 0.0, 100));
+  Serial1.println(map(gSpeed, 0, 15000, 0, 100));
+}
+
+void handleCharPos(String params) {
+  // Expected format: "CHARPOS [char] [x] [y]"
+  int firstSpace = params.indexOf(' ');
+  int secondSpace = params.indexOf(' ', firstSpace + 1);
+  
+  if (firstSpace == -1 || secondSpace == -1) {
+    Serial1.println("ERROR: Invalid CHARPOS format. Use: CHARPOS [char] [x] [y]");
+    return;
+  }
+
+  String charStr = params.substring(0, firstSpace);
+  String xStr = params.substring(firstSpace + 1, secondSpace);
+  String yStr = params.substring(secondSpace + 1);
+  
+  char targetChar = charStr.charAt(0);
+  int newX = xStr.toInt();
+  int newY = yStr.toInt();
+
+  // Validate coordinates
+  if (newX < 0 || newX > 50 || newY < 0 || newY > 50) {
+    Serial1.println("ERROR: Coordinates must be between 0 and 50");
+    return;
+  }
+
+  // Update the appropriate array
+  if (isAlpha(targetChar)) {
+    int index = toupper(targetChar) - 'A';
+    if (index >= 0 && index < NUM_LETTERS) {
+      letterPositions[index].x = newX;
+      letterPositions[index].y = newY;
+      Serial1.print("OK: Updated position for '");
+      Serial1.print(targetChar);
+      Serial1.print("' to x=");
+      Serial1.print(newX);
+      Serial1.print(" y=");
+      Serial1.println(newY);
+    } else {
+      Serial1.println("ERROR: Invalid letter");
+    }
+  }
+  else if (isDigit(targetChar)) {
+    int index = targetChar - '0';
+    if (index >= 0 && index < NUM_NUMBERS) {
+      numberPositions[index].x = newX;
+      numberPositions[index].y = newY;
+      Serial1.print("OK: Updated position for '");
+      Serial1.print(targetChar);
+      Serial1.print("' to x=");
+      Serial1.print(newX);
+      Serial1.print(" y=");
+      Serial1.println(newY);
+    } else {
+      Serial1.println("ERROR: Invalid number");
+    }
+  }
+  else {
+    Serial1.println("ERROR: Invalid character");
+  }
 }
 
 void handleCalibrate() {
-  // Tutaj dodaj kod obsługujący kalibrację maszyny
   Serial1.println("OK");
   Serial1.println("Calibration started");
-  
   calibrate();
 }
 
@@ -518,56 +413,87 @@ void handleVersion() {
   Serial1.println("VERSION 0.9.1 01.02.2025");
 }
 
+void handleGetChars() {
+  // Print all letter positions
+  Serial1.println("Letter positions:");
+  for (int i = 0; i < NUM_LETTERS; i++) {
+    char letter = 'A' + i;
+    Serial1.print(letter);
+    Serial1.print(": x=");
+    Serial1.print(letterPositions[i].x);
+    Serial1.print(" y=");
+    Serial1.println(letterPositions[i].y);
+  }
+  
+  // Print all number positions
+  Serial1.println("\nNumber positions:");
+  for (int i = 0; i < NUM_NUMBERS; i++) {
+    Serial1.print(i);
+    Serial1.print(": x=");
+    Serial1.print(numberPositions[i].x);
+    Serial1.print(" y=");
+    Serial1.println(numberPositions[i].y);
+  }
+}
+
 void handleStop() {
   Serial1.print("Stopping...");
   isStopped = true;
 }
 
+void setup() {
+  Serial1.begin(9600);
+  
+  pinMode(kontXtPin, INPUT_PULLUP);
+  pinMode(kontXbPin, INPUT_PULLUP);
+  pinMode(kontYlPin, INPUT_PULLUP);
+  pinMode(kontYrPin, INPUT_PULLUP);
+  
+  // Initialize default character positions
+  initializeDefaultPositions();
+}
+
 void loop() {
-
-  // if (Serial1.available())
-  // {
-  //   String message = Serial1.readString();
-  //   message.trim(); // Remove any whitespace or newlines
-
-  //   // Echo back what was received
-  //   // Serial1.println(message);
-  //   // delay(1000);
-  //   // Serial1.println(message);
-  //   // Blink LED 3 times
-  // }
-
   if (Serial1.available()) {
-    String message = Serial1.readString();  // Read the entire command
+    String message = Serial1.readString();
     message.trim();
 
-    // Split the message into command and argument (command:argument)
-    int delimiterIndex = message.indexOf(' ');                // Find the first space
-    String command = message.substring(0, delimiterIndex);    // Extract the command
-    String argument = message.substring(delimiterIndex + 1);  // Extract the argument (if any)
+    int delimiterIndex = message.indexOf(' ');
+    String command = delimiterIndex == -1 ? message : message.substring(0, delimiterIndex);
+    String argument = delimiterIndex == -1 ? "" : message.substring(delimiterIndex + 1);
 
-    // Parse the argument as an integer (for motor speed)
-    // Handle the command
-    if (command == String("DISPLAY")) {
-      handleDisplay(argument);  // No argument needed for stopping
-    } else if (command == String("HOME")) {
+    if (command == String("CHARPOS")) {
+      handleCharPos(argument);
+    }
+    else if (command == String("DISPLAY")) {
+      handleDisplay(argument);
+    }
+    else if (command == String("HOME")) {
       handleHome();
-    } else if (command == String("MOVE")) {
+    }
+    else if (command == String("MOVE")) {
       handleMove(argument);
-    } else if (command == String("SET_SPEED")) {
+    }
+    else if (command == String("SET_SPEED")) {
       handleSetSpeed(argument);
-    } else if (command == String("GET_SPEED")) {
+    }
+    else if (command == String("GET_SPEED")) {
       handleGetSpeed();
-    } else if (command == String("CALIBRATE")) {
+    }
+    else if (command == String("CALIBRATE")) {
       handleCalibrate();
-    } else if (command == String("ECHO")) {
+    }
+    else if (command == String("ECHO")) {
       handleEcho(argument);
-    } else if (command == String("VERSION")) {
+    }
+    else if (command == String("VERSION")) {
       handleVersion();
-    } else if (command == String("STOP")) {
+    }
+    else if (command == String("STOP")) {
       handleStop();
+    }
+    else if (command == String("GET_CHARS")) {
+      handleGetChars();
     }
   }
 }
-
-
