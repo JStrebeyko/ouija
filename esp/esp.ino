@@ -6,7 +6,18 @@ const char* ssid = "smacznego";
 const char* password = "poker1234";
 SoftwareSerial mySerial(13, 12);
 ESP8266WebServer server(80);
+#define MAX_LOG_LENGTH 16384  // Adjust this value based on available memory
 String serialLog = "";
+
+// Function to trim log if it gets too long
+void trimLog() {
+  if (serialLog.length() > MAX_LOG_LENGTH) {
+    int newlinePos = serialLog.indexOf('\n', serialLog.length() - MAX_LOG_LENGTH);
+    if (newlinePos != -1) {
+      serialLog = serialLog.substring(newlinePos + 1);
+    }
+  }
+}
 const int LED_PIN = LED_BUILTIN;
 unsigned long previousMillis = 0;
 const long interval = 1000;
@@ -21,8 +32,12 @@ void setup() {
     digitalWrite(LED_PIN, HIGH);
     delay(200);
   }
-  Serial.begin(9600);
+  Serial.begin(9600);  // Faster serial speed
   mySerial.begin(9600);
+  // Set buffer sizes if supported by the SoftwareSerial implementation
+  #ifdef _SS_MAX_RX_BUFF
+    mySerial.setBufferSize(256);  // Increase buffer size if possible
+  #endif
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -75,10 +90,12 @@ void handleRoot() {
     "  width: 100%;"
     "  text-align: left;"
     "  padding: 10px;"
-    "  white-space: pre-wrap;"           // Added this line
-    "  word-wrap: break-word;"           // Added this line
-    "  font-family: monospace;"          // Added this line
-    "  line-height: 1.4;"               // Added this line
+    "  white-space: pre-line;"           // Changed to pre-line for better wrapping
+    "  word-wrap: break-word;"           // For wrapping long words
+    "  word-break: break-word;"          // Added for better wrapping behavior
+    "  font-family: monospace;"          // Keep monospace font
+    "  line-height: 1.4;"                // Keep line height
+    "  max-width: 100%;"                 // Ensure content stays within container
     "}"
     ".button {"
     "  margin: 10px;"
@@ -138,7 +155,8 @@ void handleSend() {
   if (server.hasArg("message")) {
     String message = server.arg("message");
     mySerial.println(message);
-    serialLog += "Sent: " + message + "\n";    // Using single backslash for newline
+    serialLog += "Sent: " + message + "\n";
+    trimLog();    // Using single backslash for newline
     server.send(200, "text/plain", "Message sent");
   } else {
     server.send(400, "text/plain", "No message received");
@@ -151,7 +169,8 @@ void handleRead() {
     receivedMessage += mySerial.readStringUntil('\n');
   }
   if (receivedMessage.length() > 0) {
-    serialLog += "Received: " + receivedMessage + "\n";    // Using single backslash for newline
+            serialLog += "Received: " + receivedMessage + "\n";
+        trimLog();    // Using single backslash for newline
   }
   server.send(200, "text/html", serialLog);
 }
