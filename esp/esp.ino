@@ -1,12 +1,23 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
+#include <DNSServer.h>
 #include <SoftwareSerial.h>
 
-const char* ssid = "smacznego";
-const char* password = "poker1234";
+const char* softAP_ssid = "NodeMCU_Serial";     // The name of the WiFi network
+const char* softAP_password = "serial1234";     // Password for the WiFi network
+
+// Static IP Configuration
+IPAddress staticIP(192, 168, 4, 10);     // Choose a specific IP address
+IPAddress gateway(192, 168, 4, 1);       // Default gateway for soft AP
+IPAddress subnet(255, 255, 255, 0);      // Subnet mask
+
+// DNS server configuration
+const byte DNS_PORT = 53;
+DNSServer dnsServer;
+
 SoftwareSerial mySerial(13, 12);
 ESP8266WebServer server(80);
-#define MAX_LOG_LENGTH 16384  // Adjust this value based on available memory
+#define MAX_LOG_LENGTH 16384
 String serialLog = "";
 
 // Function to trim log if it gets too long
@@ -18,6 +29,7 @@ void trimLog() {
     }
   }
 }
+
 const int LED_PIN = LED_BUILTIN;
 unsigned long previousMillis = 0;
 const long interval = 1000;
@@ -32,21 +44,27 @@ void setup() {
     digitalWrite(LED_PIN, HIGH);
     delay(200);
   }
-  Serial.begin(9600);  // Faster serial speed
+  
+  Serial.begin(9600);
   mySerial.begin(9600);
-  // Set buffer sizes if supported by the SoftwareSerial implementation
+  
+  // Set up soft access point with static IP
+  WiFi.mode(WIFI_AP);
+  WiFi.softAPConfig(staticIP, gateway, subnet);
+  WiFi.softAP(softAP_ssid, softAP_password);
+  
+  // Start DNS server
+  // This will redirect all domain requests to the device's IP
+  dnsServer.start(DNS_PORT, "*", staticIP);
+  
+  // Print out the IP address of the soft AP
+  IPAddress myIP = WiFi.softAPIP();
+  Serial.print("AP IP address: ");
+  Serial.println(myIP);
+  
   #ifdef _SS_MAX_RX_BUFF
-    mySerial.setBufferSize(256);  // Increase buffer size if possible
+    mySerial.setBufferSize(256);
   #endif
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
   
   server.on("/", handleRoot);
   server.on("/send", HTTP_POST, handleSend);
@@ -57,7 +75,9 @@ void setup() {
 }
 
 void loop() {
+  dnsServer.processNextRequest();  // Process DNS requests
   server.handleClient();
+  
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
