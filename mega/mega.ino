@@ -111,8 +111,8 @@ void initializeDefaultPositions()
   {
     float angle = -((6.28319 / NUM_LETTERS) * i);
     // Convert from polar to cartesian coordinates and map to 0-50 range
-    letterPositions[i].x = 25 + round(25 * cos(angle));
-    letterPositions[i].y = 25 + round(25 * sin(angle));
+    letterPositions[i].x = 25 + round(20 * cos(angle));
+    letterPositions[i].y = 25 + round(20 * sin(angle));
   }
 
   // Calculate default positions for numbers (smaller circle)
