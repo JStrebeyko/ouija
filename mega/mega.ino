@@ -1,4 +1,5 @@
 #include <AccelStepper.h>
+#include <EEPROM.h>
 
 #define RST_PIN 6
 
@@ -48,10 +49,59 @@ struct Position
 
 #define NUM_LETTERS 26
 #define NUM_NUMBERS 10
+#define NUM_SPECIAL_CHARS 16  // Common special characters
 
 // Arrays to store x,y positions for each character
-Position letterPositions[NUM_LETTERS]; // A-Z
-Position numberPositions[NUM_NUMBERS]; // 0-9
+Position letterPositions[NUM_LETTERS];    // A-Z
+Position numberPositions[NUM_NUMBERS];    // 0-9
+Position specialCharPositions[NUM_SPECIAL_CHARS]; // Special characters
+
+// Special characters we support
+const char SPECIAL_CHARS[NUM_SPECIAL_CHARS] = {
+  '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '-', '_', '+', '=', ',', '/'
+};
+
+// EEPROM addresses
+#define EEPROM_INITIALIZED_FLAG 0  // Address 0: Flag to check if EEPROM has been initialized
+#define EEPROM_LETTERS_START 1     // Starting address for letter positions
+#define EEPROM_NUMBERS_START 105   // Starting address for number positions (1 + 26*4)
+#define EEPROM_SPECIAL_START 145   // Starting address for special characters (105 + 10*4)
+
+// Helper function to get index of a special character
+int getSpecialCharIndex(char c) {
+  for (int i = 0; i < NUM_SPECIAL_CHARS; i++) {
+    if (SPECIAL_CHARS[i] == c) {
+      return i;
+    }
+  }
+  return -1; // Not found
+}
+
+// Get position information for a specific character
+bool getCharPosition(char c, Position& pos) {
+  if (isAlpha(c)) {
+    int index = toupper(c) - 'A';
+    if (index >= 0 && index < NUM_LETTERS) {
+      pos = letterPositions[index];
+      return true;
+    }
+  } 
+  else if (isDigit(c)) {
+    int index = c - '0';
+    if (index >= 0 && index < NUM_NUMBERS) {
+      pos = numberPositions[index];
+      return true;
+    }
+  }
+  else {
+    int index = getSpecialCharIndex(c);
+    if (index >= 0) {
+      pos = specialCharPositions[index];
+      return true;
+    }
+  }
+  return false;
+}
 
 // Initialize default positions in a circle
 void initializeDefaultPositions()
@@ -59,7 +109,7 @@ void initializeDefaultPositions()
   // Calculate default positions for letters (larger circle)
   for (int i = 0; i < NUM_LETTERS; i++)
   {
-    float angle = -((6.28319 / 26) * i);
+    float angle = -((6.28319 / NUM_LETTERS) * i);
     // Convert from polar to cartesian coordinates and map to 0-50 range
     letterPositions[i].x = 25 + round(25 * cos(angle));
     letterPositions[i].y = 25 + round(25 * sin(angle));
@@ -68,11 +118,143 @@ void initializeDefaultPositions()
   // Calculate default positions for numbers (smaller circle)
   for (int i = 0; i < NUM_NUMBERS; i++)
   {
-    float angle = -((6.28319 / 10) * i);
+    float angle = -((6.28319 / NUM_NUMBERS) * i);
     // Use smaller radius for numbers
     numberPositions[i].x = 25 + round(15 * cos(angle));
     numberPositions[i].y = 25 + round(15 * sin(angle));
   }
+  
+  // Calculate default positions for special characters (smallest circle)
+  for (int i = 0; i < NUM_SPECIAL_CHARS; i++)
+  {
+    float angle = -((6.28319 / NUM_SPECIAL_CHARS) * i);
+    // Use smallest radius for special characters
+    specialCharPositions[i].x = 25 + round(10 * cos(angle));
+    specialCharPositions[i].y = 25 + round(10 * sin(angle));
+  }
+}
+
+// Save all positions to EEPROM
+void savePositionsToEEPROM()
+{
+  // Write initialized flag
+  EEPROM.write(EEPROM_INITIALIZED_FLAG, 42); // Use 42 as our initialized flag
+  
+  // Save letter positions
+  int addr = EEPROM_LETTERS_START;
+  for (int i = 0; i < NUM_LETTERS; i++)
+  {
+    EEPROM.write(addr++, letterPositions[i].x);
+    EEPROM.write(addr++, letterPositions[i].y);
+  }
+  
+  // Save number positions
+  addr = EEPROM_NUMBERS_START;
+  for (int i = 0; i < NUM_NUMBERS; i++)
+  {
+    EEPROM.write(addr++, numberPositions[i].x);
+    EEPROM.write(addr++, numberPositions[i].y);
+  }
+  
+  // Save special character positions
+  addr = EEPROM_SPECIAL_START;
+  for (int i = 0; i < NUM_SPECIAL_CHARS; i++)
+  {
+    EEPROM.write(addr++, specialCharPositions[i].x);
+    EEPROM.write(addr++, specialCharPositions[i].y);
+  }
+  
+  Serial1.println("Positions saved to EEPROM");
+}
+
+// Load all positions from EEPROM
+bool loadPositionsFromEEPROM()
+{
+  // Check if EEPROM has been initialized
+  byte initialized = EEPROM.read(EEPROM_INITIALIZED_FLAG);
+  if (initialized != 42) // If not our magic number
+  {
+    Serial1.println("EEPROM not initialized, using default positions");
+    return false;
+  }
+  
+  // Load letter positions
+  int addr = EEPROM_LETTERS_START;
+  for (int i = 0; i < NUM_LETTERS; i++)
+  {
+    letterPositions[i].x = EEPROM.read(addr++);
+    letterPositions[i].y = EEPROM.read(addr++);
+  }
+  
+  // Load number positions
+  addr = EEPROM_NUMBERS_START;
+  for (int i = 0; i < NUM_NUMBERS; i++)
+  {
+    numberPositions[i].x = EEPROM.read(addr++);
+    numberPositions[i].y = EEPROM.read(addr++);
+  }
+  
+  // Load special character positions
+  addr = EEPROM_SPECIAL_START;
+  for (int i = 0; i < NUM_SPECIAL_CHARS; i++)
+  {
+    specialCharPositions[i].x = EEPROM.read(addr++);
+    specialCharPositions[i].y = EEPROM.read(addr++);
+  }
+  
+  Serial1.println("Positions loaded from EEPROM");
+  return true;
+}
+
+// Save a specific character position to EEPROM
+void saveCharPositionToEEPROM(char targetChar)
+{
+  int addr;
+  int index;
+  
+  if (isAlpha(targetChar))
+  {
+    index = toupper(targetChar) - 'A';
+    if (index >= 0 && index < NUM_LETTERS)
+    {
+      addr = EEPROM_LETTERS_START + (index * 2);
+      EEPROM.write(addr, letterPositions[index].x);
+      EEPROM.write(addr + 1, letterPositions[index].y);
+      Serial1.print("Position for '");
+      Serial1.print(targetChar);
+      Serial1.println("' saved to EEPROM");
+    }
+  }
+  else if (isDigit(targetChar))
+  {
+    index = targetChar - '0';
+    if (index >= 0 && index < NUM_NUMBERS)
+    {
+      addr = EEPROM_NUMBERS_START + (index * 2);
+      EEPROM.write(addr, numberPositions[index].x);
+      EEPROM.write(addr + 1, numberPositions[index].y);
+      Serial1.print("Position for '");
+      Serial1.print(targetChar);
+      Serial1.println("' saved to EEPROM");
+    }
+  }
+  else
+  {
+    // Check if it's a special character
+    index = getSpecialCharIndex(targetChar);
+    if (index >= 0)
+    {
+      addr = EEPROM_SPECIAL_START + (index * 2);
+      EEPROM.write(addr, specialCharPositions[index].x);
+      EEPROM.write(addr + 1, specialCharPositions[index].y);
+      Serial1.print("Position for '");
+      Serial1.print(targetChar);
+      Serial1.println("' saved to EEPROM");
+    }
+  }
+  
+  // Make sure the initialized flag is set
+  EEPROM.write(EEPROM_INITIALIZED_FLAG, 42);
 }
 
 // declare functions
@@ -263,6 +445,22 @@ void charPos(char letter = 'a')
       pos = numberPositions[index];
     }
   }
+  else
+  {
+    // Check if it's a special character
+    int index = getSpecialCharIndex(letter);
+    if (index >= 0)
+    {
+      pos = specialCharPositions[index];
+    }
+    else
+    {
+      // Default to center if character not found
+      xPos = width / 2;
+      yPos = height / 2;
+      return;
+    }
+  }
 
   // Map the 0-50 position to actual width/height
   xPos = map(pos.x, 0, 50, 0, width);
@@ -297,17 +495,21 @@ void playString(String sentence = " ")
 
       if (Serial1.available() || kontaktYl == 0 || kontaktYr == 0 || kontaktXt == 0 || kontaktXb == 0)
       {
-        String message = Serial1.readString();
-        message.trim();
-        if (message == String("STOP"))
-        {
-          Serial1.println("Movement stopped");
-          moveToX(xl.currentPosition());
-          y.moveTo(y.currentPosition());
-          runSpeedToPositionX();
-          y.runSpeedToPosition();
-          return;
-        }
+        // String message = Serial1.readString();
+        // message.trim();
+        // if (message == String("STOP"))
+        // {
+          Serial1.println("WARNING! End of area - going to next letter (please change this letter position or recalibrate)");
+          // moveToX(xl.currentPosition());
+          // y.moveTo(y.currentPosition());
+          // runSpeedToPositionX();
+          // y.runSpeedToPosition();
+          // return;
+        // }
+        charPos(sentence.charAt(i));
+         moveToX(xPos);
+        y.moveTo(yPos);
+        i++;
       }
       runSpeedToPositionX();
       y.runSpeedToPosition();
@@ -412,7 +614,6 @@ void handleGetSpeed()
   Serial1.println(map(gSpeed, 0, 15000, 0, 100));
 }
 
-
 void handleCharPos(String params)
 {
   // Expected format: "CHARPOS [char] [x] [y]"
@@ -440,7 +641,7 @@ void handleCharPos(String params)
     return;
   }
 
-  // Update the appropriate array
+  // Update the appropriate array and save to EEPROM
   if (isAlpha(targetChar))
   {
     int index = toupper(targetChar) - 'A';
@@ -448,6 +649,8 @@ void handleCharPos(String params)
     {
       letterPositions[index].x = newX;
       letterPositions[index].y = newY;
+      // Save to EEPROM
+      saveCharPositionToEEPROM(targetChar);
       Serial1.print("OK: Updated position for '");
       Serial1.print(targetChar);
       Serial1.print("' to x=");
@@ -467,6 +670,8 @@ void handleCharPos(String params)
     {
       numberPositions[index].x = newX;
       numberPositions[index].y = newY;
+      // Save to EEPROM
+      saveCharPositionToEEPROM(targetChar);
       Serial1.print("OK: Updated position for '");
       Serial1.print(targetChar);
       Serial1.print("' to x=");
@@ -481,7 +686,25 @@ void handleCharPos(String params)
   }
   else
   {
-    Serial1.println("ERROR: Invalid character");
+    // Check if it's a special character
+    int index = getSpecialCharIndex(targetChar);
+    if (index >= 0)
+    {
+      specialCharPositions[index].x = newX;
+      specialCharPositions[index].y = newY;
+      // Save to EEPROM
+      saveCharPositionToEEPROM(targetChar);
+      Serial1.print("OK: Updated position for '");
+      Serial1.print(targetChar);
+      Serial1.print("' to x=");
+      Serial1.print(newX);
+      Serial1.print(" y=");
+      Serial1.println(newY);
+    }
+    else
+    {
+      Serial1.println("ERROR: Character not supported");
+    }
   }
 }
 
@@ -500,39 +723,106 @@ void handleEcho(String params)
 
 void handleVersion()
 {
-  Serial1.println("VERSION 0.9.2 08.02.2025");
+  Serial1.println("VERSION 0.9.5 08.04.2025");
 }
 
-void handleGetChars()
+// Handle getting character positions for specific characters
+void handleGetChar(String params)
 {
-  // Print all letter positions
-  Serial1.println("Letter positions:");
-  for (int i = 0; i < NUM_LETTERS; i++)
-  {
-    char letter = 'A' + i;
-    Serial1.print(letter);
-    Serial1.print(": x=");
-    Serial1.print(letterPositions[i].x);
-    Serial1.print(" y=");
-    Serial1.println(letterPositions[i].y);
+  if (params.length() == 0) {
+    // If no parameters, list all supported character types
+    Serial1.println("Usage: GET_CHAR [char1] [char2] ...");
+    Serial1.println("Supported character types: A-Z, 0-9, and special characters");
+    Serial1.print("Supported special characters: ");
+    for (int i = 0; i < NUM_SPECIAL_CHARS; i++) {
+      Serial1.print(SPECIAL_CHARS[i]);
+      Serial1.print(" ");
+    }
+    Serial1.println();
+    return;
   }
+  
+  // Process each character in the parameters
+  int currentPos = 0;
+  while (currentPos < params.length()) {
+    // Skip spaces
+    while (currentPos < params.length() && params.charAt(currentPos) == ' ') {
+      currentPos++;
+    }
+    
+    // If we reached the end, break
+    if (currentPos >= params.length()) {
+      break;
+    }
+    
+    // Get the character
+    char c = params.charAt(currentPos);
+    currentPos++; // Move to next position
+    
+    // Get position for the character
+    Position pos;
+    if (getCharPosition(c, pos)) {
+      Serial1.print(c);
+      Serial1.print(": x=");
+      Serial1.print(pos.x);
+      Serial1.print(" y=");
+      Serial1.println(pos.y);
+    } else {
+      Serial1.print("ERROR: Character '");
+      Serial1.print(c);
+      Serial1.println("' not supported");
+    }
+  }
+}
 
-  // Print all number positions
-  Serial1.println("\nNumber positions:");
-  for (int i = 0; i < NUM_NUMBERS; i++)
-  {
-    Serial1.print(i);
-    Serial1.print(": x=");
-    Serial1.print(numberPositions[i].x);
-    Serial1.print(" y=");
-    Serial1.println(numberPositions[i].y);
+// List all supported characters
+void handleListChars()
+{
+  Serial1.println("Supported characters:");
+  
+  // List letters
+  Serial1.print("Letters: ");
+  for (int i = 0; i < NUM_LETTERS; i++) {
+    Serial1.print((char)('A' + i));
+    Serial1.print(" ");
   }
+  Serial1.println();
+  
+  // List numbers
+  Serial1.print("Numbers: ");
+  for (int i = 0; i < NUM_NUMBERS; i++) {
+    Serial1.print((char)('0' + i));
+    Serial1.print(" ");
+  }
+  Serial1.println();
+  
+  // List special characters
+  Serial1.print("Special: ");
+  for (int i = 0; i < NUM_SPECIAL_CHARS; i++) {
+    Serial1.print(SPECIAL_CHARS[i]);
+    Serial1.print(" ");
+  }
+  Serial1.println();
 }
 
 void handleStop()
 {
   Serial1.print("Stopping...");
   isStopped = true;
+}
+
+// New command handlers for EEPROM operations
+void handleSaveChars()
+{
+  savePositionsToEEPROM();
+  Serial1.println("OK: All character positions saved to EEPROM");
+}
+
+void handleResetChars()
+{
+  initializeDefaultPositions();
+  savePositionsToEEPROM();
+  Serial1.println("OK: All character positions reset to defaults and saved to EEPROM");
 }
 
 void setup()
@@ -544,8 +834,15 @@ void setup()
   pinMode(kontYlPin, INPUT_PULLUP);
   pinMode(kontYrPin, INPUT_PULLUP);
 
-  // Initialize default character positions
-  initializeDefaultPositions();
+  // Try to load positions from EEPROM, if not available use defaults
+  if (!loadPositionsFromEEPROM())
+  {
+    // Initialize default character positions
+    initializeDefaultPositions();
+    // Save defaults to EEPROM
+    savePositionsToEEPROM();
+  }
+  
   // calibrate
   calibrate();
 }
@@ -601,9 +898,21 @@ void loop()
     {
       handleStop();
     }
-    else if (command == String("GET_CHARS"))
+    else if (command == String("GET_CHAR"))
     {
-      handleGetChars();
+      handleGetChar(argument);
+    }
+    else if (command == String("LIST_CHARS"))
+    {
+      handleListChars();
+    }
+    else if (command == String("SAVE_CHARS"))
+    {
+      handleSaveChars();
+    }
+    else if (command == String("RESET_CHARS"))
+    {
+      handleResetChars();
     }
   }
 }
