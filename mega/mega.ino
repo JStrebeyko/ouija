@@ -493,7 +493,7 @@ void playString(String sentence = " ")
         i++;
       }
 
-      if (Serial1.available() || kontaktYl == 0 || kontaktYr == 0 || kontaktXt == 0 || kontaktXb == 0)
+      if (kontaktYl == 0 || kontaktYr == 0 || kontaktXt == 0 || kontaktXb == 0)
       {
         // String message = Serial1.readString();
         // message.trim();
@@ -511,6 +511,23 @@ void playString(String sentence = " ")
         y.moveTo(yPos);
         i++;
       }
+
+      if (Serial1.available())
+      {
+        String message = Serial1.readString();
+        message.trim();
+        if (message == String("STOP"))
+        {
+          Serial1.println("STOPPING");
+          moveToX(xl.currentPosition());
+          y.moveTo(y.currentPosition());
+          runSpeedToPositionX();
+          y.runSpeedToPosition();
+          return;
+        }
+        
+      }
+
       runSpeedToPositionX();
       y.runSpeedToPosition();
     }
