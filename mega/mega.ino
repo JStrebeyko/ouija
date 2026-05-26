@@ -257,6 +257,19 @@ void saveCharPositionToEEPROM(char targetChar)
   EEPROM.write(EEPROM_INITIALIZED_FLAG, 42);
 }
 
+// --- Debounce helper ---
+// Returns true only if the pin reads LOW for `confirmations` consecutive reads.
+// 200us between reads is long enough to outlast inductive glitches from stepper drivers
+// but short enough not to affect motor motion at calibration speed.
+// Increase confirmations (e.g. to 5 or 10) if false triggers persist.
+bool isTriggered(int pin, uint8_t confirmations = 3) {
+  for (uint8_t i = 0; i < confirmations; i++) {
+    if (digitalRead(pin) == HIGH) return false;
+    delayMicroseconds(200);
+  }
+  return true;
+}
+
 // declare functions
 void runSpeedX()
 {
@@ -318,11 +331,13 @@ bool calibrateX()
   {
     if (!done)
     {
-      int kontaktXt = digitalRead(kontXtPin);
-      int kontaktXb = digitalRead(kontXbPin);
+      // isTriggered() requires 3 consecutive LOW reads to confirm,
+      // filtering out single-sample noise spikes from the stepper drivers.
+      bool kontaktXt = isTriggered(kontXtPin);
+      bool kontaktXb = isTriggered(kontXbPin);
       if (direction == 1)
       {
-        if (kontaktXt == 1)
+        if (!kontaktXt)
         {
           moveX(steps);
         }
@@ -334,7 +349,7 @@ bool calibrateX()
       }
       else
       {
-        if (kontaktXb == 1)
+        if (!kontaktXb)
         {
           moveX(-steps);
         }
@@ -370,12 +385,14 @@ bool calibrateY()
   {
     if (!done)
     {
-      int kontaktYl = digitalRead(kontYlPin);
-      int kontaktYr = digitalRead(kontYrPin);
+      // isTriggered() requires 3 consecutive LOW reads to confirm,
+      // filtering out single-sample noise spikes from the stepper drivers.
+      bool kontaktYl = isTriggered(kontYlPin);
+      bool kontaktYr = isTriggered(kontYrPin);
 
       if (direction == 0)
       {
-        if (kontaktYl == 1)
+        if (!kontaktYl)
         {
           y.move(steps);
         }
@@ -387,7 +404,7 @@ bool calibrateY()
       }
       else
       {
-        if (kontaktYr == 1)
+        if (!kontaktYr)
         {
           y.move(-steps);
         }
@@ -410,8 +427,6 @@ bool calibrateY()
       {
         calibratedY = true;
         Serial1.println("Y calibrated");
-        // Serial1.print("width :" + width);
-        // Serial1.println(" height :" + height);
         return true;
       }
     }
@@ -495,19 +510,9 @@ void playString(String sentence = " ")
 
       if (kontaktYl == 0 || kontaktYr == 0 || kontaktXt == 0 || kontaktXb == 0)
       {
-        // String message = Serial1.readString();
-        // message.trim();
-        // if (message == String("STOP"))
-        // {
-          Serial1.println("WARNING! End of area - going to next letter (please change this letter position or recalibrate)");
-          // moveToX(xl.currentPosition());
-          // y.moveTo(y.currentPosition());
-          // runSpeedToPositionX();
-          // y.runSpeedToPosition();
-          // return;
-        // }
+        Serial1.println("WARNING! End of area - going to next letter (please change this letter position or recalibrate)");
         charPos(sentence.charAt(i));
-         moveToX(xPos);
+        moveToX(xPos);
         y.moveTo(yPos);
         i++;
       }
@@ -537,7 +542,7 @@ void playString(String sentence = " ")
 void calibrate()
 {
   Serial1.println("calibrating...");
-  steppersSetup(15000.0, 10000.0, 100000.0);
+  steppersSetup(15000.0/4, 10000.0/4, 100000.0/4);
 
   moveToX(steps);
   calibratedX = false;
